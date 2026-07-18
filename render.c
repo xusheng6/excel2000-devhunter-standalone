@@ -71,6 +71,8 @@ void game_render(int shade){
       }
     }
 
-    /* TODO: car models, bullets, debris (sub_3c7de915 tail). */
-    (void)shade; (void)camY;
+    /* car models, bullets, debris (sub_3c7de915 tail) */
+    g_render_shade = shade;
+    render_cars(fb, pitch);
+    (void)camY;
 }
