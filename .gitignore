@@ -1,0 +1,11 @@
+# build artifacts
+*.exe
+*.obj
+*.pdb
+*.ilk
+# captured frames / scratch images
+*.ppm
+*.png
+approx/*.exe
+approx/*.obj
+approx/data.h

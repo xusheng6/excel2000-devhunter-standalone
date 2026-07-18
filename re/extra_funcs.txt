@@ -1,0 +1,449 @@
+
+// ===== wndproc_input @ 0x3c7dfc6b  'sub_3c7dfc6b' cc=stdcall =====
+// proto: int32_t __stdcall(int32_t* arg1, int32_t arg2, int32_t arg3, int32_t arg4)
+// callees: 
+int32_t ebx
+int32_t var_18 = ebx
+int32_t edi
+int32_t var_1c = edi
+int32_t result
+int32_t* esp
+int32_t* var_2c
+
+if (arg2 u> 0x20)
+    if (arg2 == 0x7e)
+    label_3c7dfe60:
+        
+        if (*(data_3c953438 + 0x9a918) == 0)
+            goto label_3c7dfca8
+        
+        if (IsIconic(arg1) == 0)
+            int32_t eax_41 = GetSystemMetrics(4, GetSystemMetrics(0, GetSystemMetrics(1)))
+            int32_t var_28_5 = 0
+            int32_t var_14
+            var_2c = &var_14
+            SetRect(var_2c, var_28_5, eax_41)
+            int32_t var_24_7 = 0
+            int32_t var_28_6 = 0
+            var_2c = 0x80c00000
+            AdjustWindowRectEx(&var_14, var_2c, var_28_6, var_24_7)
+            int32_t var_24_8 = 0x14
+            int32_t var_c
+            var_2c = var_c - var_14
+            int32_t var_10
+            int32_t var_8
+            SetWindowPos(arg1, 0, var_14, var_10, var_2c, var_8 - var_10, var_24_8)
+        
+        goto label_3c7dfca8
+    
+    if (arg2 != 0x100)
+        if (arg2 == 0x101)
+            switch (arg3)
+                case 0x20
+                    *(data_3c953438 + 0x9a6b0) = 0
+                case 0x25
+                    *(data_3c953438 + 0xa8) = 0
+                case 0x26
+                    *(data_3c953438 + 0xac) = 0
+                case 0x27
+                    *(data_3c953438 + 0xa4) = 0
+                case 0x28
+                    *(data_3c953438 + 0xb0) = 0
+                case 0x4f
+                    *(data_3c953438 + 0x9a6ac) = 0
+        
+        goto label_3c7dfca8
+    
+    if (arg3 u> 0x27)
+        if (arg3 == 0x28)
+            *(data_3c953438 + 0xb0) = 1
+            goto label_3c7dfca8
+        
+        if (arg3 == 0x48)
+            void* eax_35 = data_3c953438
+            *(eax_35 + 0x9a6a8) ^= 1
+            goto label_3c7dfca8
+        
+        if (arg3 == 0x4f)
+            *(data_3c953438 + 0x9a6ac) = 1
+            goto label_3c7dfca8
+        
+        if (arg3 != 0x7b)
+            goto label_3c7dfca8
+    else
+        if (arg3 == 0x27)
+            *(data_3c953438 + 0xa4) = 1
+            goto label_3c7dfca8
+        
+        if (arg3 != 0x1b)
+            if (arg3 == 0x20)
+                *(data_3c953438 + 0x9a6b0) = 1
+            else if (arg3 == 0x25)
+                *(data_3c953438 + 0xa8) = 1
+            else if (arg3 == 0x26)
+                *(data_3c953438 + 0xac) = 1
+            
+            goto label_3c7dfca8
+    
+    bool cond:2_1 = data_3c90b000 != 0
+    int32_t __saved_esi_4 = 0
+    int32_t var_24_2 = 0
+    int32_t var_28_2 = 0x10
+    var_2c = arg1
+    esp = &var_2c
+    
+    if (cond:2_1)
+        PostMessageW()
+    else
+        PostMessageA()
+    
+    result = 0
+else if (arg2 == 0x20)
+    SetCursor(0)
+    result = 1
+    esp = &var_1c
+else
+    if (arg2 != 2)
+        if (arg2 == 3 || arg2 == 5)
+            goto label_3c7dfe60
+        
+        if (arg2 == 0x1c)
+            *(data_3c953438 + 0x9a918) = arg3
+        
+        goto label_3c7dfca8
+    
+    int32_t __saved_esi_2 = 0
+    *(data_3c953438 + 0x9a91c) = 0
+    PostQuitMessage(__saved_esi_2)
+label_3c7dfca8:
+    int32_t __saved_esi_1 = arg4
+    bool cond:0_1 = data_3c90b000 != 0
+    int32_t var_24_1 = arg3
+    int32_t var_28_1 = arg2
+    var_2c = arg1
+    esp = &var_2c
+    
+    if (cond:0_1)
+        result = DefWindowProcW()
+    else
+        result = DefWindowProcA()
+*esp
+esp[1]
+return result
+
+// ===== setmode_palette @ 0x3c7dc3a0  'sub_3c7dc3a0' cc=fastcall =====
+// proto: int32_t __fastcall(void* arg1)
+// callees: sub_3c6ddb29, sub_3c6ddb4c, sub_3c6ddd63, sub_3c7d8d8f
+int32_t __saved_ebp_1
+int32_t __saved_ebp = __saved_ebp_1
+int32_t ebx
+int32_t var_498 = ebx
+int32_t esi
+int32_t var_49c = esi
+int32_t edi
+int32_t var_4a0 = edi
+int32_t* eax = *(arg1 + 0x9a924)
+int32_t eax_1 = (*(*eax + 0x54))(eax, 0x280, 0x1e0, 8)
+int32_t* esp_1 = &var_4a0
+int32_t result
+
+if (eax_1 != 0)
+    result = 0
+else
+    int32_t var_4a4_1 = 0x1b
+    int32_t var_94
+    int32_t ecx_1
+    int32_t edi_1
+    edi_1, ecx_1 = __memfill_u32(&var_94, eax_1, 0x1b)
+    int32_t* eax_2 = *(arg1 + 0x9a924)
+    int32_t var_4a4_2 = 0
+    var_94 = 0x6c
+    int32_t var_90_1 = 0x20
+    int32_t var_80_1 = 2
+    int16_t var_2c_1 = 0x4218
+    
+    if ((*(*eax_2 + 0x18))(eax_2, &var_94, arg1 + 0x9a928, var_4a4_2) == 0)
+    label_3c7dc45c:
+        int32_t* edi_3 = *(arg1 + 0x9a928)
+        int32_t var_4a4_5 = 4
+        int32_t var_28 = 4
+        esp_1 = &var_4a0
+        
+        if ((*(*edi_3 + 0x30))(edi_3, &var_28, arg1 + 0x9a92c) == 0)
+            int32_t eax_10 = GetDC(0)
+            int32_t i = 0
+            void var_493
+            char* eax_11 = &var_493
+            
+            do
+                char ecx_5 = i.b << 2
+                eax_11[0xffffffff] = ecx_5
+                *eax_11 = ecx_5
+                eax_11[1] = ecx_5
+                i += 1
+                eax_11 = &eax_11[4]
+            while (i s< 0x40)
+            
+            int32_t i_1 = 0
+            void var_393
+            char* eax_12 = &var_393
+            
+            do
+                eax_12[0xffffffff] = (i_1.b + 0x1e) << 1
+                *eax_12 = (i_1.b + 0x20) << 1
+                char edx_1 = i_1.b + 1
+                i_1 += 1
+                eax_12[1] = edx_1
+                eax_12 = &eax_12[4]
+            while (i_1 s< 0x20)
+            
+            int32_t i_2 = 0
+            void var_313
+            char* ecx_6 = &var_313
+            
+            do
+                int32_t ebx_3
+                ebx_3.b = 5
+                char eax_13 = i_2.b << 3
+                ecx_6[0xffffffff] = eax_13
+                *ecx_6 = eax_13
+                ecx_6 = &ecx_6[4]
+                ecx_6[0xfffffffd] = muls.dp.b(i_2.b, 5)
+                i_2 += 1
+            while (i_2 s< 0x20)
+            
+            int32_t var_4a4_8 = 0x10
+            int32_t i_3 = 0
+            void var_293
+            char* eax_14 = &var_293
+            
+            do
+                eax_14[0xffffffff] = 0xff
+                *eax_14 = i_3.b << 4
+                eax_14[1] = 0
+                i_3 += 1
+                eax_14 = &eax_14[4]
+            while (i_3 s< 0x10)
+            
+            void arg_10
+            uint32_t eax_15 = sub_3c6ddb29(&arg_10)
+            uint32_t eax_16 = sub_3c6ddd63(&arg_10)
+            uint32_t eax_17 = sub_3c6ddb4c(&arg_10)
+            void var_253
+            char* ecx_10 = &var_253
+            uint32_t edi_6 = eax_16 << 4
+            uint32_t var_8_1 = eax_17 << 4
+            int32_t i_11 = 0x10
+            uint32_t esi_5 = eax_15 << 4
+            int32_t i_4
+            
+            do
+                int32_t var_4a4_9 = 0x20
+                int32_t eax_20
+                int32_t edx_3
+                edx_3:eax_20 = sx.q(esi_5)
+                esi_5 += eax_15
+                ecx_10[0xffffffff] = (divs.dp.d(edx_3:eax_20, 0x20)).b
+                int32_t eax_23
+                int32_t edx_4
+                edx_4:eax_23 = sx.q(edi_6)
+                edi_6 += eax_16
+                *ecx_10 = (divs.dp.d(edx_4:eax_23, 0x20)).b
+                ecx_10 = &ecx_10[4]
+                ecx_10[0xfffffffd] = (divs.dp.d(sx.q(var_8_1), 0x20)).b
+                var_8_1 += eax_17
+                i_4 = i_11
+                i_11 -= 1
+            while (i_4 != 1)
+            int32_t i_5 = 0
+            int32_t var_4a4_10 = 0x10
+            void var_213
+            char* ecx_11 = &var_213
+            char eax_29
+            int32_t edx_7
+            
+            do
+                edx_7.b = 5
+                char var_9_1 = i_5.b + 0x10
+                eax_29 = muls.dp.b(i_5.b + 0x10, 5)
+                ecx_11[0xffffffff] = eax_29
+                *ecx_11 = eax_29
+                edx_7.b = 3
+                i_5 += 1
+                ecx_11[1] = muls.dp.b(var_9_1, 3)
+                ecx_11 = &ecx_11[4]
+            while (i_5 s< 0x10)
+            
+            int32_t i_6 = 0
+            void var_1d3
+            char* ecx_12 = &var_1d3
+            
+            do
+                edx_7.b = 5
+                ecx_12[0xffffffff] = muls.dp.b(i_6.b + 0x10, 5)
+                *ecx_12 = 0
+                ecx_12[1] = 0
+                i_6 += 1
+                ecx_12 = &ecx_12[4]
+            while (i_6 s< 0x10)
+            
+            int32_t i_7 = 0
+            void var_193
+            char* esi_6 = &var_193
+            
+            do
+                edx_7.b = 3
+                esi_6[0xffffffff] = i_7.b + 0x10
+                eax_29 = muls.dp.b(i_7.b + 0x10, 3)
+                char ecx_13 = (i_7.b + 0x10) << 1
+                i_7 += 1
+                *esi_6 = eax_29
+                esi_6[1] = ecx_13
+                esi_6 = &esi_6[4]
+            while (i_7 s< 0x10)
+            
+            int32_t i_8 = 0
+            void var_153
+            char* ecx_14 = &var_153
+            
+            do
+                ecx_14[0xffffffff] = i_8.b + 0x10
+                *ecx_14 = i_8.b + 0x10
+                ecx_14[1] = (i_8.b + 0x10) << 2
+                i_8 += 1
+                ecx_14 = &ecx_14[4]
+            while (i_8 s< 0x10)
+            
+            int32_t i_9 = 0
+            void var_113
+            char* esi_7 = &var_113
+            int32_t edx_8
+            
+            do
+                edx_8.b = 3
+                esi_7[0xffffffff] = muls.dp.b(i_9.b + 0x10, 3)
+                *esi_7 = i_9.b + 0x10
+                char ecx_15 = (i_9.b + 0x10) << 2
+                i_9 += 1
+                esi_7[1] = ecx_15
+                esi_7 = &esi_7[4]
+            while (i_9 s< 0x10)
+            
+            int32_t i_10 = 0
+            void var_d3
+            char* ecx_16 = &var_d3
+            
+            do
+                edx_8.b = 5
+                eax_29 = muls.dp.b(i_10.b + 0x10, 5)
+                i_10 += 1
+                ecx_16[0xffffffff] = eax_29
+                *ecx_16 = eax_29
+                ecx_16[1] = eax_29
+                ecx_16 = &ecx_16[4]
+            while (i_10 s< 0x10)
+            
+            int32_t* eax_30 = *(arg1 + 0x9a924)
+            void var_494
+            
+            if ((*(*eax_30 + 0x14))(eax_30, 4, &var_494, arg1 + 0x9a930, 0) == 0)
+                int32_t* eax_32 = *(arg1 + 0x9a928)
+                (*(*eax_32 + 0x7c))(eax_32, *(arg1 + 0x9a930))
+            
+            char* var_4a4_13 = u"Tahoma"
+            int32_t var_4a8_7 = 2
+            int32_t var_4ac_6 = 3
+            bool cond:0_1 = data_3c90b000 != 0
+            int32_t var_4c4
+            __builtin_memset(&var_4c4, 0, 0x18)
+            int32_t var_4c8_1 = 0x384
+            int32_t var_4cc_1 = 0
+            int32_t var_4d0_1 = 0
+            int32_t var_4d4_1 = 0x10
+            int32_t var_4d8 = 0x40
+            int32_t* esp_4 = &var_4d8
+            int32_t eax_33
+            
+            if (cond:0_1)
+                eax_33 = CreateFontW()
+            else
+                int32_t var_4c0
+                int32_t var_4bc
+                int32_t var_4b8
+                int32_t var_4b4_2
+                int32_t var_4b0_5
+                eax_33 = sub_3c7d8d8f(var_4d8, var_4d4_1, var_4d0_1, var_4cc_1, var_4c8_1, var_4c4, 
+                    var_4c0, var_4bc, var_4b8, var_4b4_2, var_4b0_5, var_4ac_6, var_4a8_7, 
+                    var_4a4_13)
+                esp_4 = &var_4a0
+            
+            *(esp_4 - 4) = eax_10
+            *(arg1 + 0x9a920) = eax_33
+            *(esp_4 - 8) = 0
+            ReleaseDC()
+            *(esp_4 - 4) = 1
+            result = *(esp_4 - 4)
+            esp_1 = esp_4
+        else
+            result = 0
+    else
+        int32_t* eax_4 = *(arg1 + 0x9a924)
+        int32_t var_80_2 = 1
+        
+        if ((*(*eax_4 + 0x18))(eax_4, &var_94, arg1 + 0x9a928, 0) == 0)
+            goto label_3c7dc45c
+        
+        int32_t* eax_6 = *(arg1 + 0x9a924)
+        var_2c_1:1.b &= 0xbf
+        esp_1 = &var_4a0
+        
+        if ((*(*eax_6 + 0x18))(eax_6, &var_94, arg1 + 0x9a928, 0) == 0)
+            goto label_3c7dc45c
+        
+        result = 0
+
+*esp_1
+esp_1[1]
+esp_1[2]
+return result
+
+// ===== surface_init @ 0x3c7dc36f  'sub_3c7dc36f' cc=fastcall =====
+// proto: int32_t __fastcall(void* arg1)
+// callees: 
+if ((*arg1)(0, arg1 + 0x9a924, 0) != 0)
+    return 0
+
+int32_t* eax_2 = *(arg1 + 0x9a924)
+int32_t eax_3 = (*(*eax_2 + 0x50))(eax_2, *(arg1 + 0x9a91c), 0x11)
+int32_t eax_4 = neg.d(eax_3)
+return sbb.d(eax_4, eax_4, eax_3 != 0) + 1
+
+// ===== DATA 0x3c7acf60..0x3c7ad120 =====
+3c7acf60  09 04 12 07 59 41 0d 12 07 54 42 17 01 59 02 00   ....YA...TB..Y..
+3c7acf70  f0 00 04 f0 06 06 f2 09 08 f2 14 08 f0 18 07 f0   ................
+3c7acf80  1e 05 f0 1e 02 f0 09 04 f0 14 04 f0 00 02 f0 05   ................
+3c7acf90  00 f0 03 02 f0 07 02 f0 17 00 f0 15 02 f0 19 02   ................
+3c7acfa0  ee 00 09 ee 08 0c f1 0a 12 f1 18 12 ee 19 0c ee   ................
+3c7acfb0  19 09 ee 19 03 ee 0a 0c ee 18 0c ee 00 03 ee 05   ................
+3c7acfc0  00 ee 02 04 ee 08 04 ee 17 00 ee 14 04 ee 1a 04   ................
+3c7acfd0  ec 00 09 ec 08 09 ec 08 0d ec 19 0d ec 19 09 ec   ................
+3c7acfe0  19 09 ec 19 03 ec 08 09 ec 19 09 ec 00 03 ec 05   ................
+3c7acff0  00 ec 02 04 ec 08 04 ec 15 00 ec 13 04 ec 17 04   ................
+3c7ad000  ee 00 04 ee 05 0a f0 06 10 f0 1e 10 ee 1e 0a ee   ................
+3c7ad010  1e 08 ee 1e 03 ee 06 0a ee 1e 0a ee 00 03 ee 05   ................
+3c7ad020  00 ee 02 04 ee 08 04 ee 17 00 ee 15 04 ee 19 04   ................
+3c7ad030  f0 00 09 f0 07 09 f2 09 0f f2 0f 0f f0 0f 09 f0   ................
+3c7ad040  1c 09 f0 1c 03 f0 09 09 f0 0f 09 f0 00 03 f0 05   ................
+3c7ad050  00 f0 03 03 f0 07 03 f0 15 00 f0 13 03 f0 17 03   ................
+3c7ad060  00 01 0a 01 0d 0f 00 01 02 08 02 0f 04 01 02 03   ................
+3c7ad070  0a 01 14 0f 00 03 04 1e 14 1e 19 01 04 05 1e 01   ................
+3c7ad080  1e 1e 00 05 06 1e 19 1e 1e 02 00 00 02 08 07 1e   ................
+3c7ad090  1e 1e 19 19 19 01 03 08 02 1e 1e 1e 19 19 19 01   ................
+3c7ad0a0  00 05 09 0f 0f 19 01 01 0a 00 05 06 09 0f 19 19   ................
+3c7ad0b0  01 14 0a 00 02 07 01 14 14 14 01 01 01 00 03 04   ................
+3c7ad0c0  08 19 19 19 01 0f 0f 00 04 05 08 19 19 19 0f 0f   ................
+3c7ad0d0  0f 00 01 07 00 0f 0f 0f 01 01 01 00 07 08 00 0f   ................
+3c7ad0e0  0f 0f 01 01 01 00 00 08 05 0f 0f 0f 01 01 01 00   ................
+3c7ad0f0  0a 0b 0c 1e 1e 1e 1e 1e 1e 01 0d 0e 0f 1e 1e 1e   ................
+3c7ad100  1e 1e 1e 01 00 02 00 00 02 01 00 00 06 04 04 06   ................
+3c7ad110  04 03 00 00 00 00 c0 3f 00 00 20 41 00 00 00 40   .......?.. A...@

@@ -1,0 +1,77 @@
+/* game_render — sub_3c7de915, translated from asm (re/asm.txt 2773-3528).
+ * Projects a straight flat 0x41x0x41 road mesh (camera pitch 10deg, focal 864,
+ * centre (0x140,0xce)) and fills each cell as a shaded/textured trapezoid via
+ * raster_span; then cars / bullets / debris.  DirectDraw lock/flip is replaced
+ * by writing straight into g_fb (surface base pp(0x34), pitch i32(0x20)).
+ *
+ * this = S ; arg1 = `shade` (the ambient `var_14` computed in tick).
+ */
+#include <string.h>
+#include <math.h>
+#include "dh.h"
+
+/* projection constants (qwords at 0x3c7ad2xx) */
+#define COS10  0.98480775301220802
+#define SIN10  0.17364817766693041
+#define K3473  3.4729635533386071
+#define K1969  19.696155060244161
+#define FOCAL  864.0
+
+void game_render(int shade){
+    unsigned char *fb = pp(0x34);       /* g_fb */
+    int pitch = i32(0x20);
+    static int V[0x41*0x41 + 4];        /* projected X grid (var_4360) */
+    static int SY[0x41 + 2];            /* per-row screen Y (var_158..) */
+    double camX = f32(0x9c), camY = f32(0xa0);
+    double var54 = (-640.0 - camX) * 48.0;
+    double r7_2  = 48.0;
+    int var8 = i32(0xdc);
+    int row, col, i_1, edi;
+
+    /* ---- projection: 0x41 rows ---- */
+    for(row=0; row<0x41; row++){
+        double dist  = (double)((var8 & 0x3f) - 1) + camY;
+        double denom = 86.0 - (dist*COS10 + K3473);
+        int screenY  = FTOL((dist*SIN10 + K1969)*FOCAL / denom);
+        int eax12, eax13, var10, ecx;
+        SY[row] = screenY - 0xce;
+        eax12 = FTOL(var54 / denom);
+        eax13 = FTOL(r7_2 / denom);
+        r7_2  = denom;
+        var10 = 0; ecx = eax13 - eax12;
+        for(col=0; col<0x40; col++){
+            int sx = var10/0x3f + eax12 + 0x140;
+            if(sx < -0x28)      sx = sx - eax12 + eax13;
+            else if(sx > 0x2a8) sx = sx - eax13 + eax12;
+            V[1 + row*0x41 + col] = sx;
+            var10 += ecx;
+        }
+        var8++;
+    }
+
+    /* ---- road mesh raster ---- */
+    { int dc = i32(0xdc);
+      for(i_1 = -dc; i_1 < 0x31 - dc; i_1++){
+        int ebx = i_1 & 0x3f;
+        int base = 1 + ebx*0x41;
+        for(edi=0; edi<0x3f; edi++){
+            int M = base + edi;
+            int left = V[M], right = V[M+1];
+            if(left < right && left <= 0x27f && right > 0){
+                int r0 = ebx*0x40 + edi;
+                int r1 = ((ebx+1)&0x3f)*0x40 + edi;
+                pp(0x850e8) = PA(0x8d0ec, r0);      /* cell texture */
+                raster_span(fb, pitch,
+                    SY[ebx], SY[ebx+1],             /* y top / bottom */
+                    V[M], V[M+1],                    /* x top-left / top-right */
+                    V[M+0x41], V[M+0x42],            /* x bottom-left / bottom-right */
+                    IA(0x890ec, r0), IA(0x890ec, r0+1),   /* shade top l/r */
+                    IA(0x890ec, r1), IA(0x890ec, r1+1));  /* shade bottom l/r */
+            }
+        }
+      }
+    }
+
+    /* TODO: car models, bullets, debris (sub_3c7de915 tail). */
+    (void)shade; (void)camY;
+}
