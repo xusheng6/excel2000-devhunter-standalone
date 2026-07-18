@@ -57,6 +57,8 @@ void   spawn_pattern(int edi_10);                   /* tick lane/enemy pattern (
 void   barrier_row(int edi_10, int eax_59);         /* tick lane-transition row (spawn.c) */
 void   render_cars(unsigned char *fb, int pitch);   /* car/bullet/debris draw (render_cars.c) */
 extern int g_render_shade;                          /* game_render arg1 for render_cars */
+void   glow_pass(int var_14);                       /* headlight/entity glow splats (glow.c) */
+extern float glow_var_10;                            /* dt passthrough for glow_pass */
 
 unsigned int dh_time(void);
 

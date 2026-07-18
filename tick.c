@@ -194,6 +194,10 @@ void game_tick(void){
         }
     }
 
+    /* ---- headlight cone + entity/muzzle glow splats ---- */
+    glow_var_10 = var_10;
+    glow_pass(var_14);
+
     /* ---- fire bullets on Space (0x9a6b0), 2-shot spread ---- */
     if (i32(0x9a6b0) != 0 && f32(0x9a6c0) == 0.0f && (f32(0x9a6b4) - f32(0x9a6bc)) > 2.0f){
         int i_17;
