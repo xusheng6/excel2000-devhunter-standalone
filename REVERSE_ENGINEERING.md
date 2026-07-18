@@ -3,11 +3,12 @@
 Dev Hunter is a pseudo‑3D car‑shooter hidden in `MSOWC.DLL` (the Microsoft
 Office Web Components control, CLSID `0002E510-0000-0000-C000-000000000046`).
 This document records the reverse engineering behind the standalone,
-byte‑exact C reimplementation in this directory.
+faithful C++ reimplementation in this directory.
 
 All addresses use the Binary Ninja image base **`0x3c6d0000`**.
 `this`‑relative offsets (e.g. `+0xa0`) are given as used in the disassembly and
-map 1:1 onto the `dh.h` accessor macros (`f32(o)`, `i32(o)`, `u8(o)`, …).
+map 1:1 onto the named member fields of the `DevHunter` class in `devhunter.h`
+(e.g. `+0xa0` → `g->camY`), each pinned to its offset by a `static_assert`.
 
 Reference dumps live in `re/`:
 * `re/hlil.txt`  — HLIL of ~76 game functions (roots + call graph, depth 4)
@@ -188,35 +189,34 @@ edge). The standalone models this with `Wall` barriers + a `recover` timer.
 
 ## 8. Port status
 
-The delivered port (`main.c` + `game.c`) is a **faithful, playable
-reconstruction** ("close enough", per the brief) rather than a byte‑exact
-translation of the DLL's rasterizer. The renderer was tuned against the original
-gameplay recordings to match the look: the high near‑top‑down camera, wide
-mildly‑tapering multi‑lane road, drifting soft terrain shadows, mottled grass,
-and developer names painted on the tarmac (white names / yellow section
-headers). It reuses the material recovered exactly from the binary and rebuilds
-the gameplay/look on top of it:
+**Complete.** The delivered port is a **faithful 1:1 translation** of the DLL's
+game code — the perspective road renderer, both software rasterizers, player
+physics, road/lane/barrier generation, scrolling dev‑name text, elevation
+shadows, car sprites, enemies, bullets, the off‑road crash, and the night‑section
+glow are all translated from the disassembly and verified **byte‑identical**
+against the real game (run live under the Binary Ninja debugger, and via
+deterministic `--shot` SHA256 diffs across a full day/night cycle).
 
-* Exact 256‑colour palette + 8‑bit‑framebuffer→DIB present path.
-* Decrypted developer‑name / credits text, laid onto the road as scrolling
-  decals (built via GDI in `game.c:build_strip`).
-* The game's float LCG (`dh_rand`) and a flat‑road projection in the spirit of
-  the original's 10° camera / focal‑864 (see the constants in `game.c`).
-* Player physics, enemy spawning/AI, bullets, debris, collision and scoring.
-* Input wndproc mapping; ESC/F12 quit; HUD; headless `--shot N out.ppm` dumper.
-
-### If a byte‑exact port is ever wanted
-Everything needed is captured here and in `re/`. The three heavy functions would
-be translated from `re/asm.txt` (not HLIL):
+The three heavy functions were translated from `re/asm.txt` (not HLIL):
 1. `game_init` terrain generator — noise array `var_88c` at **`ebp‑0x88c`**
    (32×32 `int16`), filled `0x15 - (int)(rand()*-8)`, box‑smoothed
    (`(L+R+6*C+up+down)*10/100`) into the elevation grid, plus lane colouring and
    the GDI letter atlas (A–Z in Tahoma 64 bold → 256×256 → extruded 3D tiles).
-   Use the raw asm offsets — HLIL renders `var_88c` as ambiguous `ebp`‑relative
-   arithmetic.
-2. `game_tick` physics/entities (x87 float, self‑contained).
+   Because `init` is deterministic (RNG seed 0), its exact output is loaded from a
+   captured snapshot (`init_state.bin`) rather than re‑derived — byte‑identical
+   and still standalone.
+2. `game_tick` physics/entities (x87 float) — `tick.cpp` + `entity.cpp` +
+   `spawn.cpp` + `glow.cpp`.
 3. `game_render` projection + the gouraud/textured rasterizers `sub_3c7de66f`
-   / `sub_3c7de4a2` (HLIL in `re/hlil.txt`; §4/§7 give the math and LUT layout).
+   / `sub_3c7de4a2` — `render.cpp` + `render_cars.cpp` + `helpers.cpp` (§4/§7
+   give the math and LUT layout).
+
+The game's `this` object is modelled as the `DevHunter` class (`devhunter.h`)
+with named fields at their exact offsets, so the code reads `g->speed` /
+`g->enemy[i].timer` / `g->texptr[cell]` rather than raw `*(this+0xNN)`.
+
+An earlier "close‑enough" reconstruction (tuned against the gameplay recordings
+rather than translated) is preserved under `approx/`.
 
 ## Build & run
 ```
