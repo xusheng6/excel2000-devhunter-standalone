@@ -42,7 +42,7 @@ void glow_pass(int var_14)
             int i_32 = 1;
             double var_38_1;
 
-            g->splat_target = S + 0x890ec;                 /* splat into lighting grid */
+            g->splat_target = (unsigned char*)g->lighting;                 /* splat into lighting grid */
             var_38_1 = 66.0 - (double)g->scroll_row - (double)g->camY + 26.0;
 
             do {
@@ -66,7 +66,7 @@ void glow_pass(int var_14)
     }
 
     /* splat target = lighting grid for the enemy/debris/dusk passes */
-    g->splat_target = S + 0x890ec;
+    g->splat_target = (unsigned char*)g->lighting;
 
     /* =====================================================================
      * (2) enemy glow  (hlil 2159-2234) — one splat cluster per live enemy.
@@ -76,18 +76,15 @@ void glow_pass(int var_14)
     {
         int eax_174 = var_14 >> 8;
         int edx_32  = eax_174 >> 31;                   /* sign of eax_174 */
-        if (((eax_174 - edx_32) >> 1) - 3 > 0) {
-            float *ebx_36  = (float *)(S + 0x99460);   /* enemy render base */
-            float *var_24_6 = ebx_36;
-            int i_30 = ((eax_174 - edx_32) >> 1) - 3;
-            int i_14;
-
-            do {
-                if (ebx_36[5] > 20.0f) {               /* enemy timer alive */
+        int count   = ((eax_174 - edx_32) >> 1) - 3;   /* live-enemy glows, scales w/ dusk */
+        if (count > 0) {
+            for (int k = 0; k < count; k++) {
+                Enemy &en = g->enemy[k];
+                if (en.timer > 20.0f) {                /* enemy alive */
                     int edi_20 = g->scroll_row;
-                    double var_40_2 = (double)ebx_36[0] * 0.05 + 31.5;
+                    double var_40_2 = (double)en.y * 0.05 + 31.5;
                     double x87_r7_204 = (double)edi_20;
-                    double x87_r6_33 = 64.0 - (double)ebx_36[1]
+                    double x87_r6_33 = 64.0 - (double)en.x
                                        + (double)g->frame - x87_r7_204;
                     double var_38_2 = x87_r6_33;
                     double x87_r6_34 = x87_r6_33 + x87_r7_204;   /* 64 - x + E */
@@ -119,14 +116,9 @@ void glow_pass(int var_14)
                             i_13 += 1;
                             i_33 = i_13;
                         } while (i_13 < edi_21);
-                        ebx_36 = var_24_6;
                     }
                 }
-                ebx_36 = &ebx_36[0xa];                 /* += 0x28 bytes (next enemy) */
-                i_14 = i_30;
-                i_30 -= 1;
-                var_24_6 = ebx_36;
-            } while (i_14 != 1);
+            }
         }
     }
 
@@ -135,20 +127,16 @@ void glow_pass(int var_14)
      *     stride 0xa floats (0x28 bytes = every other debris entry).
      * ===================================================================== */
     {
-        float *edi_23 = (float *)(S + 0x99710);        /* debris entry y-field */
-        int i_37 = 0x64;
-        int i_15;
-        do {
-            if (edi_23[1] > 0.0f) {                    /* life > 0 */
+        /* every other debris entry (stride 0x28 bytes = 2 records), 0x64 of them */
+        for (int k = 0; k < 0x64; k++) {
+            Debris &db = g->debris[2*k];
+            if (db.life > 0.0f) {                      /* life > 0 */
                 double i_23 = (double)g->frame + 64.0
-                              - (double)edi_23[0] - (double)g->scroll_row;
-                double i_19 = (double)edi_23[-1] * 0.05 + 31.5;
+                              - (double)db.y - (double)g->scroll_row;
+                double i_19 = (double)db.x * 0.05 + 31.5;
                 splat(i_19, i_23, -var_14);            /* neg.d(var_14) */
             }
-            edi_23 = &edi_23[0xa];
-            i_15 = i_37;
-            i_37 -= 1;
-        } while (i_15 != 1);
+        }
     }
 
     /* =====================================================================
@@ -157,11 +145,9 @@ void glow_pass(int var_14)
      *     Each emits a 7x(i_31-1) splat block into the lighting grid.
      * ===================================================================== */
     if (var_14 < 0x1400) {
-        int i_16 = 0;
-        float *ebx_38 = (float *)(S + 0x99460);        /* enemy render base */
-        g->splat_target = S + 0x890ec;
+        g->splat_target = (unsigned char*)g->lighting;
 
-        do {
+        for (int i_16 = 0; i_16 < 8; i_16++) {
             double var_40_3 = 0.0, var_38_3 = 0.0;
             int i_31 = 0;
             int do_splat = 0;
@@ -172,12 +158,13 @@ void glow_pass(int var_14)
                 i_31 = 6;                               /* label_3c7de3a3 */
                 do_splat = 1;
             } else {                                    /* slots 0-6: enemies */
-                if (ebx_38[5] > 0.0f) {                 /* timer > 0 */
+                Enemy &en = g->enemy[i_16];
+                if (en.timer > 0.0f) {                  /* timer > 0 */
                     int edi_24 = g->scroll_row;
                     double x87_r7_223, x87_r6_40, x87_r6_41;
-                    var_40_3 = (double)ebx_38[0] * 0.05 + 31.5;
+                    var_40_3 = (double)en.y * 0.05 + 31.5;
                     x87_r7_223 = (double)edi_24;
-                    x87_r6_40 = 64.0 - (double)ebx_38[1]
+                    x87_r6_40 = 64.0 - (double)en.x
                                 + (double)g->frame - x87_r7_223;
                     var_38_3 = x87_r6_40;
                     x87_r6_41 = x87_r6_40 + x87_r7_223; /* 64 - x + E */
@@ -209,9 +196,7 @@ void glow_pass(int var_14)
                 }
             }
 
-            i_16 += 1;
-            ebx_38 = &ebx_38[0xa];
-        } while (i_16 < 8);
+        }
     }
 
     /* =====================================================================
@@ -224,7 +209,7 @@ void glow_pass(int var_14)
             int eax_202;
             double bx = (double)g->speed * 0.05;      /* camX*0.05 */
             double ry = 66.0 - (double)g->scroll_row + (double)g->camY;
-            g->splat_target = S + 0x850ec;                 /* target = elevation grid */
+            g->splat_target = (unsigned char*)g->elevation;    /* target = elevation grid */
             eax_202 = FTOL(glow_var_10 * 5120.0f);     /* dt * 5120 */
 
             splat(bx + 31.0, ry + 27.0, eax_202);
