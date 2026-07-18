@@ -17,6 +17,16 @@ dev‑name text, the car sprites, enemies and bullets are all translated from th
 disassembly. See `REVERSE_ENGINEERING.md` for the teardown and `re/` for the raw
 HLIL/asm.
 
+The original is C++ (an ActiveX/COM control; the game logic is methods on one
+large `this` object), so the port is **C++** too: `devhunter.h` declares that
+object as a `DevHunter` class whose member fields sit at their exact original
+`this` offsets — each pinned by a `static_assert(offsetof(...) == 0xNNN)` so a
+layout mistake can't compile. The game code then reads like `g->speed`,
+`g->enemy[i].timer`, `g->texptr[cell]` instead of raw `*(this+0xNN)` offsets.
+Every step of the C→C++/named‑field refactor was verified byte‑identical against
+the prior build across a full day/night cycle (frames 120/2600/5200/9200) using
+a deterministic `--shot` clock.
+
 `init` (the one‑time, deterministic terrain/texture/letter‑atlas setup) is loaded
 from a snapshot of its exact output (`init_state.bin`) rather than re‑derived —
 byte‑identical and still standalone.
@@ -67,14 +77,15 @@ devhunter.exe --shot 120 out.ppm
 
 | file | role |
 |------|------|
-| `main.c` | window, message loop, input wndproc, 8‑bit→palette→DIB present, `--shot` |
-| `init.c` | loads the captured deterministic `init` state (`init_state.bin`) |
-| `tick.c` | `game_tick`: physics, day/night, road scroll + text, elevation, bullet fire |
-| `entity.c` | enemy / bullet / debris update loops |
-| `spawn.c` | enemy‑spawn + lane / barrier ("lanes start and end") generation |
-| `render.c` | `game_render`: perspective road‑mesh projection + rasterization |
-| `render_cars.c` | car / bullet / debris sprite projection + drawing |
-| `helpers.c` | RNG, the two gouraud/textured rasterizers, particle spawn/splat |
+| `devhunter.h` | the `DevHunter` game‑object class (fields at exact offsets, `static_assert`‑checked) |
+| `main.cpp` | window, message loop, input wndproc, 8‑bit→palette→DIB present, `--shot` |
+| `init.cpp` | loads the captured deterministic `init` state (`init_state.bin`) |
+| `tick.cpp` | `game_tick`: physics, day/night, road scroll + text, elevation, bullet fire |
+| `entity.cpp` | enemy / bullet / debris update loops |
+| `spawn.cpp` | enemy‑spawn + lane / barrier ("lanes start and end") generation |
+| `render.cpp` | `game_render`: perspective road‑mesh projection + rasterization |
+| `render_cars.cpp` | car / bullet / debris sprite projection + drawing |
+| `helpers.cpp` | RNG, the two gouraud/textured rasterizers, particle spawn/splat |
 | `data.h` | generated: exact palette, decrypted text, data tables (from `MSOWC.DLL`) |
 | `init_state.bin` | captured deterministic output of the DLL's init |
 | `REVERSE_ENGINEERING.md`, `re/` | full RE notes and raw HLIL/asm dumps |

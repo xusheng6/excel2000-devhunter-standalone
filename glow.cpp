@@ -6,7 +6,7 @@
  * for the player headlight cone, enemy/debris glows, a dusk fill pass, and the
  * muzzle glow — mostly visible in the night section.
  *
- * FP compares decoded (see MEMORY / dh.h):  the status word after fcom/fstsw is
+ * FP compares decoded (see MEMORY / devhunter.h):  the status word after fcom/fstsw is
  *   X = (a<b)<<8 | unord<<0xa | (a==b)<<0xe [|0x3800/0x3000]
  * and `X:1.b` is the *high* byte (bits 8-15), so test_bit(,0)=C0=(a<b) and
  * test_bit(,6)=C3=(a==b).  The 0x3800/0x3000 fill only sets C1/C2-area bits that
