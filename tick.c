@@ -82,10 +82,13 @@ void game_tick(void){
       { float d = var_10 * f32(0xbc);
         f32(0xc4) = d + f32(0xc4);
         f32(0xa0) = d + f32(0xa0); }
-      /* barrier crash check (only when not already recovering) */
+      /* barrier crash check (only when not already recovering).
+       * col uses 0xc0 (speed/camX) — as you steer off-centre the checked column
+       * drifts past the road edge into grass/barrier, which crashes you.
+       * (The HLIL mislabels this as a0; the x87 ftol pops, leaving 0xc0 on top.) */
       if (f32(0x9a6c0) == 0.0f){
           int row = FTOL(66.0 - (double)i32(0xdc) - (double)f32(0xa0) + 28.0);
-          int col = FTOL((double)f32(0xa0)*0.05 + 31.5);
+          int col = FTOL((double)f32(0xc0)*0.05 + 31.5);
           if (PA(0x8d0ec, ((row&0x3f)<<6)+col) == S+0x20e8){
               int e0 = i32(0xe0);
               f32(0xbc)=0.0f; f32(0x9a6c0)=20.0f; f32(0xb8)=0.0f;
