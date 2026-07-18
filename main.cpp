@@ -21,7 +21,12 @@ static HBITMAP  g_dib;
 static unsigned int *g_dibpix;
 static unsigned int g_pal32[256];
 
-unsigned int dh_time(void){ return timeGetTime(); }
+/* --shot uses a virtual clock so headless runs are deterministic (real
+ * timeGetTime jitter would make dt wobble between 20 and 21ms across a long run,
+ * making frame N's output timing-dependent).  Live play uses the real clock. */
+static int          g_fake_clock = 0;
+static unsigned int g_fake_time  = 0;
+unsigned int dh_time(void){ return g_fake_clock ? g_fake_time : timeGetTime(); }
 
 static void build_pal32(void){
     int i; for(i=0;i<256;i++)
@@ -118,7 +123,8 @@ int WINAPI WinMain(HINSTANCE hi,HINSTANCE hp,LPSTR cmd,int show){
         sscanf(cmd,"%*s %d %259s",&frames,outp);
         make_window(); timeBeginPeriod(1); boot();
         g->key_up=1;   /* simulate accelerator so the road scrolls */
-        for(i=0;i<frames;i++){ g->frame_timer=dh_time()-20; game_tick(); }
+        g_fake_clock=1; g_fake_time=0; g->frame_timer=0;   /* deterministic 20ms/frame */
+        for(i=0;i<frames;i++){ g_fake_time+=20; game_tick(); }
         dump_ppm(outp); return 0;
     }
 
