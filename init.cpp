@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <windows.h>
-#include "dh.h"
+#include "devhunter.h"
 #include "data.h"
 
 #define INIT_BASE 0x6a0000u          /* THIS address when init_state.bin was captured (post-init) */

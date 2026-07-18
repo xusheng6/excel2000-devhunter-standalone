@@ -15,7 +15,7 @@
  * which is what the road part already assumes since it ignores `shade`).
  */
 #include <math.h>
-#include "dh.h"
+#include "devhunter.h"
 #include "data.h"          /* g_tab + TAB(absoluteAddr) : car vertex & mesh tables */
 
 /* ---- projection constants (qwords in the DLL) ---- */

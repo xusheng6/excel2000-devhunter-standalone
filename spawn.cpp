@@ -22,7 +22,7 @@
  *                [1]=target-y (float), [2]=timer/health (float, >0 = alive)
  */
 #include <string.h>
-#include "dh.h"
+#include "devhunter.h"
 
 /* hlil 1795-1970 : pick a new lane / enemy pattern. */
 void spawn_pattern(int edi_10)

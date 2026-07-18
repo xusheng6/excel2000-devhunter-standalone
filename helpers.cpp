@@ -1,6 +1,6 @@
 /* Dev Hunter helpers — leaf functions of MSOWC.DLL, translated 1:1. */
 #include <math.h>
-#include "dh.h"
+#include "devhunter.h"
 
 /* sub_3c8d36e0: float LCG in [0,1) */
 double dh_rand(void){

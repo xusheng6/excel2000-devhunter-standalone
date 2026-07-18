@@ -7,10 +7,11 @@
 #include <mmsystem.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "dh.h"
+#include "devhunter.h"
 #include "data.h"
 
 unsigned char *S = NULL;
+DevHunter    *g = NULL;   /* same memory as S — the readable, named-field view */
 unsigned char *g_fb = NULL;
 double g_rand_seed = 0.0;
 
@@ -94,6 +95,7 @@ static void make_window(void){
 /* mimic func1/setmode: allocate state, wire surface + letter font, then init */
 static void boot(void){
     S = (unsigned char*)VirtualAlloc(NULL,STATE_SIZE,MEM_COMMIT,PAGE_READWRITE);
+    g = (DevHunter*)S;              /* the class overlays the raw buffer */
     memset(S,0,STATE_SIZE);
     g_fb = (unsigned char*)malloc(FB_PITCH*SCR_H);
     memset(g_fb,0,FB_PITCH*SCR_H);

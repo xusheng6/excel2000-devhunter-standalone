@@ -25,7 +25,7 @@
  * game_tick's var_10 immediately before calling glow_pass).  See summary.
  */
 #include <math.h>
-#include "dh.h"
+#include "devhunter.h"
 
 /* frame dt (game_tick var_10); caller sets this before glow_pass(). */
 float glow_var_10 = 0.0f;

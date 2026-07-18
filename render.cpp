@@ -8,7 +8,7 @@
  */
 #include <string.h>
 #include <math.h>
-#include "dh.h"
+#include "devhunter.h"
 
 /* projection constants (qwords at 0x3c7ad2xx) */
 #define COS10  0.98480775301220802

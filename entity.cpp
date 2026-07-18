@@ -20,7 +20,7 @@
  *   edi_6[ 6] 0x99474  timer/health (>20 = alive/active, decays otherwise)
  */
 #include <math.h>
-#include "dh.h"
+#include "devhunter.h"
 
 void entity_update(float var_10, float var_18)
 {

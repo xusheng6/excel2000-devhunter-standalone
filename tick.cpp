@@ -4,7 +4,7 @@
  * FP compares decoded as: test_bit(x,0)=a<b, test_bit(x,6)=a==b.
  */
 #include <string.h>
-#include "dh.h"
+#include "devhunter.h"
 #include "data.h"
 
 void game_tick(void){
