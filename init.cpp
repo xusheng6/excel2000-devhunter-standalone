@@ -30,12 +30,12 @@ void game_init(void){
      * them from the decrypted credits and re-point the buffer + cursor fields. */
     b1=(unsigned char*)malloc(sizeof g_text1); memcpy(b1,g_text1,sizeof g_text1);
     b2=(unsigned char*)malloc(sizeof g_text2); memcpy(b2,g_text2,sizeof g_text2);
-    pp(0x910ec)=b1; pp(0x910f0)=b2;
-    pp(0xc8)=b1; pp(0xcc)=b2;          /* stream cursors at start */
-    i32(0xd0)=0; i32(0xd4)=1; i32(0xd8)=0x14;
+    g->text_buf[0]=b1; g->text_buf[1]=b2;
+    g->text_cur[0]=b1; g->text_cur[1]=b2;          /* stream cursors at start */
+    g->text_stream=0; g->text_toggle=1; g->text_col=0x14;
     /* our 8-bit framebuffer replaces the DirectDraw surface; make a letter font */
-    i32(0x20)=FB_PITCH;
-    i32(0x34)=(int)(INT_PTR)g_fb;
-    i32(0x9a920)=(int)(INT_PTR)CreateFont(64,16,0,0,FW_BLACK,0,0,0,ANSI_CHARSET,
+    g->surf_pitch=FB_PITCH;
+    g->surf=g_fb;
+    g->letter_font=(int)(INT_PTR)CreateFont(64,16,0,0,FW_BLACK,0,0,0,ANSI_CHARSET,
         OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,DEFAULT_PITCH,"Tahoma");
 }

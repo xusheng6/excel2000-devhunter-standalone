@@ -1,6 +1,6 @@
 /* game_tick — sub_3c7dcb73, translated from hlil (re/hlil.txt 981-2473) + asm.
- * Per frame: dt + day/night ambient, player physics, [enemies/bullets/debris -
- * TODO], road scroll + dev-name painting + elevation, [glow - TODO], then render.
+ * Per frame: dt + day/night ambient, player physics, enemies/bullets/debris,
+ * road scroll + dev-name painting + elevation, glow, then render.
  * FP compares decoded as: test_bit(x,0)=a<b, test_bit(x,6)=a==b.
  */
 #include <string.h>
@@ -15,84 +15,84 @@ void game_tick(void){
 
     /* ---- time delta ---- */
     { int eax = (int)dh_time();
-      int dt  = eax - i32(0xb4);
-      i32(0xb4) = eax;
+      int dt  = eax - g->frame_timer;
+      g->frame_timer = eax;
       var_10 = (float)dt * 0.0199999996f;
       var_18 = 1.0f - var_10*0.04f; }
 
-    /* ---- day/night ambient from timer 0x9a6b4 ---- */
-    { float x = f32(0x9a6b4);
+    /* ---- day/night ambient from the daynight timer ---- */
+    { float x = g->daynight;
       if      (x < 1000.0f) var_14 = 0;
       else if (x < 2000.0f) var_14 = FTOL((double)(x-1000.0f)*0.0199999996*256.0);
       else if (x < 2600.0f) var_14 = 0x1400;
       else                  var_14 = FTOL((3600.0-(double)x)*0.0199999996*256.0); }
     /* advance the timer, wrap the day/night cycle at 3600 */
-    { float nx = var_10 + f32(0x9a6b4);
-      f32(0x9a6b4) = nx;
-      if (nx > 3600.0f){ f32(0x9a6b4)=nx-3600.0f; f32(0x9a6b8)-=3600.0f; f32(0x9a6bc)-=3600.0f; } }
+    { float nx = var_10 + g->daynight;
+      g->daynight = nx;
+      if (nx > 3600.0f){ g->daynight=nx-3600.0f; g->spawn_at-=3600.0f; g->fire_at-=3600.0f; } }
 
     /* fill lighting grid with ambient */
-    for(i=0;i<0x1000;i++) IA(0x890ec, i) = var_14;
+    for(i=0;i<0x1000;i++) g->lighting[i] = var_14;
 
     /* ---- spawn a new enemy car when the spawn timer allows ---- */
-    if ((f32(0x9a6b4) - f32(0x9a6b8)) > 25.0f){
+    if ((g->daynight - g->spawn_at) > 25.0f){
         int e;
         for(e=0;e<7;e++){
-            int b = e*0x28;
-            if (f32(b + 0x99474) <= 0.0f){          /* found an inactive slot */
-                int pat = (signed char)u8(0x9a7fc);
+            Enemy &en = g->enemy[e];
+            if (en.timer <= 0.0f){                  /* found an inactive slot */
+                int pat = (signed char)g->spawn_pat;
                 int lane = FTOL(dh_rand() * (double)(signed char)TAB(0x3c7ad10c + pat))
                          + (signed char)TAB(0x3c7ad104 + pat);
                 float lanepos = (float)(lane * 0x54) - 210.0f;
                 float vx = (float)(dh_rand() * 3.6);
-                f32(b + 0x99474) = 100.0f;           /* timer = alive */
-                i32(b + 0x9946c) = lane;
-                f32(b + 0x99470) = lanepos;          /* target-y */
-                f32(b + 0x99460) = lanepos;          /* y */
-                f32(b + 0x9945c) = vx;               /* vx */
-                f32(b + 0x99458) = 0.0f;             /* vy */
-                f32(b + 0x99464) = (vx >= f32(0xbc)) ? (float)(i32(0xe0) - 0x41)
-                                                     : (float)(i32(0xe0) + 0xa);   /* x */
-                i32(b + 0x99478) = 1 - FTOL(dh_rand() * -6.0);   /* colour variant */
+                en.timer    = 100.0f;                /* timer = alive */
+                en.lane     = lane;
+                en.target_y = lanepos;
+                en.y        = lanepos;
+                en.vx       = vx;
+                en.vy       = 0.0f;
+                en.x        = (vx >= g->throttle) ? (float)(g->frame - 0x41)
+                                                  : (float)(g->frame + 0xa);
+                en.color    = 1 - FTOL(dh_rand() * -6.0);   /* colour variant */
                 { double r = dh_rand() * 5.0;
                   if (FTOL(r) == 2 && (r - 2.0) < 0.5) r = 0.5;
-                  i32(b + 0x9947c) = FTOL(r); }      /* pose */
+                  g->setPose(e, FTOL(r)); }          /* pose */
                 break;
             }
         }
-        f32(0x9a6b8) = f32(0x9a6b4);
+        g->spawn_at = g->daynight;
     }
 
     /* ---- player physics ---- */
     {
-      if (f32(0x9a6c0) != 0.0f){                    /* crash recovery */
-          float r = f32(0x9a6c0) - var_10;
-          f32(0x9a6c0)=r; f32(0xbc)=0.0f; f32(0xb8)=0.0f;
-          if (r <= 0.0f){ f32(0xc0)=0.0f; f32(0x9a6c0)=0.0f; }
+      if (g->recover != 0.0f){                    /* crash recovery */
+          float r = g->recover - var_10;
+          g->recover=r; g->throttle=0.0f; g->steer=0.0f;
+          if (r <= 0.0f){ g->speed=0.0f; g->recover=0.0f; }
       } else {
-          int gas=i32(0xa4), brake=i32(0xa8);
-          if (gas)  { float v=var_10*4.0f + f32(0xb8); f32(0xb8)=v; if(v<-10.0f) f32(0xb8)=-10.0f; }
-          if (brake){ float v=f32(0xb8) - var_10*4.0f; f32(0xb8)=v; if(v>10.0f)  f32(0xb8)= 10.0f; }
-          if (!gas && !brake) f32(0xb8) = (1.0f - var_10*0.2f)*f32(0xb8);
-          if (i32(0xac)){ float v=var_10*0.200000003f + f32(0xbc); f32(0xbc)=v; if(v>2.6f) f32(0xbc)=2.6f; }
-          if (i32(0xb0)){ float v=f32(0xbc) - var_10*0.200000003f; f32(0xbc)=v; if(v<0.0f) f32(0xbc)=0.0f; }
+          int gas=g->key_gas, brake=g->key_brake;
+          if (gas)  { float v=var_10*4.0f + g->steer; g->steer=v; if(v<-10.0f) g->steer=-10.0f; }
+          if (brake){ float v=g->steer - var_10*4.0f; g->steer=v; if(v>10.0f)  g->steer= 10.0f; }
+          if (!gas && !brake) g->steer = (1.0f - var_10*0.2f)*g->steer;
+          if (g->key_up){ float v=var_10*0.200000003f + g->throttle; g->throttle=v; if(v>2.6f) g->throttle=2.6f; }
+          if (g->key_down){ float v=g->throttle - var_10*0.200000003f; g->throttle=v; if(v<0.0f) g->throttle=0.0f; }
       }
-      f32(0xc0) = f32(0xbc)*0.217391312f * f32(0xb8) * var_10 + f32(0xc0);
+      g->speed = g->throttle*0.217391312f * g->steer * var_10 + g->speed;
       (void)var_18;
-      { float d = var_10 * f32(0xbc);
-        f32(0xc4) = d + f32(0xc4);
-        f32(0xa0) = d + f32(0xa0); }
+      { float d = var_10 * g->throttle;
+        g->lateral = d + g->lateral;
+        g->camY = d + g->camY; }
       /* barrier crash check (only when not already recovering).
-       * col uses 0xc0 (speed/camX) — as you steer off-centre the checked column
-       * drifts past the road edge into grass/barrier, which crashes you.
-       * (The HLIL mislabels this as a0; the x87 ftol pops, leaving 0xc0 on top.) */
-      if (f32(0x9a6c0) == 0.0f){
-          int row = FTOL(66.0 - (double)i32(0xdc) - (double)f32(0xa0) + 28.0);
-          int col = FTOL((double)f32(0xc0)*0.05 + 31.5);
-          if (PA(0x8d0ec, ((row&0x3f)<<6)+col) == S+0x20e8){
-              int e0 = i32(0xe0);
-              f32(0xbc)=0.0f; f32(0x9a6c0)=20.0f; f32(0xb8)=0.0f;
-              spawn_burst(f32(0xc0), (float)(e0-0x1c), 0.0f, 0.0f);
+       * col uses `speed` — as you steer off-centre the checked column drifts
+       * past the road edge into grass/barrier, which crashes you.
+       * (The HLIL mislabels this as a0; the x87 ftol pops, leaving speed on top.) */
+      if (g->recover == 0.0f){
+          int row = FTOL(66.0 - (double)g->scroll_row - (double)g->camY + 28.0);
+          int col = FTOL((double)g->speed*0.05 + 31.5);
+          if (g->texptr[((row&0x3f)<<6)+col] == g->proto(TEX_GRASS)){
+              int e0 = g->frame;
+              g->throttle=0.0f; g->recover=20.0f; g->steer=0.0f;
+              spawn_burst(g->speed, (float)(e0-0x1c), 0.0f, 0.0f);
           }
       }
       (void)var_18;
@@ -101,76 +101,77 @@ void game_tick(void){
     /* ---- enemy / bullet / debris updates ---- */
     entity_update(var_10, var_18);
 
-    f32(0x9c) = f32(0xc0);   /* camera lateral = speed (steering curves the road) */
+    g->camX = g->speed;   /* camera lateral = speed (steering curves the road) */
 
-    /* ---- road scroll: emit new rows as the odometer (0xa0) advances ---- */
-    while(f32(0xa0) >= 1.0f){
+    /* ---- road scroll: emit new rows as the odometer advances ---- */
+    while(g->camY >= 1.0f){
         int eax_59, edi_10, i_4;
-        f32(0xa0) -= 1.0f;
-        i32(0xdc) += 1; i32(0xe0) += 1;
-        if (i32(0xdc) > 0x40) i32(0xdc) -= 0x40;
-        eax_59 = i32(0x9a7e8);
-        edi_10 = (-i32(0xdc)) & 0x3f;
+        g->camY -= 1.0f;
+        g->scroll_row += 1; g->frame += 1;
+        if (g->scroll_row > 0x40) g->scroll_row -= 0x40;
+        eax_59 = g->barrier_phase;
+        edi_10 = (-g->scroll_row) & 0x3f;
 
         if (eax_59 == 0){
             /* paint the road surface for this row: grass / road / dashed lanes */
             for(i_4=0;i_4<0x40;i_4++){
                 int eax_114 = (i_4-0x13) >> 2;
                 unsigned char *cell;
-                if (i_4 < 0x13 || i_4 > 0x2b) cell = S+0x20e8;
+                if (i_4 < 0x13 || i_4 > 0x2b) cell = g->proto(TEX_GRASS);
                 else if (((i_4+1)&3) != 0){
-                    cell = S+0xe8;
-                    if (IA(0x9a6cc, eax_114) == 0) cell = S+0x20e8;
+                    cell = g->proto(TEX_PLAIN);
+                    if (g->lane_cur[eax_114] == 0) cell = g->proto(TEX_GRASS);
                 } else {
-                    int edx_18 = IA(0x9a6c8, eax_114);
+                    int edx_18 = g->lane_cur[eax_114 - 1];   /* occupancy one cell back */
                     if (edx_18 != 0){
-                        if (IA(0x9a6cc, eax_114) == 0) cell = S+0x10e8;
-                        else cell = ((i32(0xe0) % 6) < 3) ? S+0x10e8 : S+0xe8;
-                    } else if (IA(0x9a6cc, eax_114) == edx_18) cell = S+0x20e8;
+                        if (g->lane_cur[eax_114] == 0) cell = g->proto(TEX_LANE);
+                        else cell = ((g->frame % 6) < 3) ? g->proto(TEX_LANE) : g->proto(TEX_PLAIN);
+                    } else if (g->lane_cur[eax_114] == edx_18) cell = g->proto(TEX_GRASS);
                     else {
-                        if (edx_18 != 0 && IA(0x9a6cc, eax_114) != 0)
-                            cell = ((i32(0xe0) % 6) < 3) ? S+0x10e8 : S+0xe8;
-                        else cell = S+0x10e8;
+                        if (edx_18 != 0 && g->lane_cur[eax_114] != 0)
+                            cell = ((g->frame % 6) < 3) ? g->proto(TEX_LANE) : g->proto(TEX_PLAIN);
+                        else cell = g->proto(TEX_LANE);
                     }
                 }
-                PA(0x8d0ec, (edi_10<<6)+i_4) = cell;
+                g->texptr[(edi_10<<6)+i_4] = cell;
             }
             /* paint the current dev-name word onto the road */
             { int edx_24 = 0;
-              unsigned char *ecx_21 = PA(0xc8, i32(0xd0));
-              int eax_120 = i32(0x910ec);
+              unsigned char *ecx_21    = g->text_cur[g->text_stream];  /* word start */
+              unsigned char *word_base = g->text_buf[0];               /* stream 0 base */
               unsigned char i_5;
-              while((i_5 = *PA(0xc8, i32(0xd0))) != 0x2d){
+              while((i_5 = *g->text_cur[g->text_stream]) != 0x2d){
                   if (i_5 != 0x20){
-                      int eax_122 = i32(0xd4) + ((int)(signed char)i_5 << 1);
+                      int eax_122 = g->text_toggle + ((int)(signed char)i_5 << 1);
+                      /* letter tile in the 3D-letter atlas (upper/lower case bank) */
                       unsigned char *cell = (i_5 < 0x61)
                           ? (unsigned char*)((eax_122<<0xc) + (int)(INT_PTR)S - 0x30f18)
                           : (unsigned char*)((eax_122<<0xc) + (int)(INT_PTR)S - 0xa4f18);
-                      PA(0x8d0ec, (edi_10<<6) + i32(0xd8) + edx_24) = cell;
+                      g->texptr[(edi_10<<6) + g->text_col + edx_24] = cell;
                   }
                   edx_24++;
-                  PA(0xc8, i32(0xd0)) = PA(0xc8, i32(0xd0)) + 1;
+                  g->text_cur[g->text_stream]++;
               }
-              /* advance / repeat the word, handle control chars # / ! */
-              { int eax_129 = i32(0xd0);
-                int t = i32(0xd4) ^ 1;
-                i32(0xd4) = t;
+              /* advance / repeat the word, handle control chars - # / ! */
+              { int eax_129 = g->text_stream;
+                int t = g->text_toggle ^ 1;
+                g->text_toggle = t;
                 if (t != 0){
-                    PA(0xc8, eax_129) = PA(0xc8, eax_129) + 1;
-                    { unsigned char c = *PA(0xc8, i32(0xd0));
-                      if (c == 0x23) PA(0xc8, i32(0xd0)) = (unsigned char*)(eax_120 + 0xfa);
-                      if (c == 0x2f){ PA(0xc8, i32(0xd0)) = pp(0x910f0); i32(0xd0) ^= 1; }
-                      if (c == 0x21){ PA(0xc8, i32(0xd0)) = PA(0xc8, i32(0xd0))+1; i32(0xd0) ^= 1; } }
+                    g->text_cur[eax_129]++;
+                    { unsigned char c = *g->text_cur[g->text_stream];
+                      if (c == 0x23) g->text_cur[g->text_stream] = word_base + 0xfa;
+                      if (c == 0x2f){ g->text_cur[g->text_stream] = g->text_buf[1]; g->text_stream ^= 1; }
+                      if (c == 0x21){ g->text_cur[g->text_stream]++; g->text_stream ^= 1; } }
                 } else {
-                    PA(0xc8, eax_129) = ecx_21;
+                    g->text_cur[eax_129] = ecx_21;
                 }
               }
             }
             /* spawn countdown -> pick a new lane/enemy pattern */
-            i32(0x9a6c4) -= 1;
-            if (i32(0x9a6c4) < 1 && i32(0xd4) != 0) spawn_pattern(edi_10);
+            g->spawn_count -= 1;
+            if (g->spawn_count < 1 && g->text_toggle != 0) spawn_pattern(edi_10);
         } else {
-            barrier_row(edi_10, eax_59);   /* sets 0x9a7e8 = eax_59-1 internally */
+            barrier_row(edi_10, eax_59);   /* sets barrier_phase = eax_59-1 internally */
         }
         /* elevation (road shadow) generation for the new row */
         { int next_base = ((edi_10+1)&0x3f) << 6;
@@ -178,18 +179,18 @@ void game_tick(void){
           int v3;
           for(v3=1; v3<=0x40; v3++){
               int col = v3-1, add = 0;
-              int ebx_8 = ( IA(0x850ec, ((v3-2)&0x3f) + next_base)
-                          + IA(0x850ec, ( v3   &0x3f) + next_base)
-                          + (IA(0x850ec, next_base + col) << 1) ) >> 2;
+              int ebx_8 = ( g->elevation[((v3-2)&0x3f) + next_base]
+                          + g->elevation[( v3   &0x3f) + next_base]
+                          + (g->elevation[next_base + col] << 1) ) >> 2;
               double r = dh_rand() * 10.0;
               if (r < 2.0) add = FTOL(r*512.0);
               else if (r > 7.99) add = FTOL((r-10.0)*512.0);
-              if (PA(0x8d0ec, cur_base+col) == S+0x20e8) add <<= 2;
+              if (g->texptr[cur_base+col] == g->proto(TEX_GRASS)) add <<= 2;
               { int e = ebx_8 + add;
                 if (e < 0) e = 0;
                 if (e > 0x1400) e = 0x1400;
-                if (e > 0xa00 && PA(0x8d0ec, cur_base+col) != S+0x20e8) e -= 0x100;
-                IA(0x850ec, cur_base+col) = e; }
+                if (e > 0xa00 && g->texptr[cur_base+col] != g->proto(TEX_GRASS)) e -= 0x100;
+                g->elevation[cur_base+col] = e; }
           }
         }
     }
@@ -198,31 +199,30 @@ void game_tick(void){
     glow_var_10 = var_10;
     glow_pass(var_14);
 
-    /* ---- fire bullets on Space (0x9a6b0), 2-shot spread ---- */
-    if (i32(0x9a6b0) != 0 && f32(0x9a6c0) == 0.0f && (f32(0x9a6b4) - f32(0x9a6bc)) > 2.0f){
+    /* ---- fire bullets on Space, 2-shot spread ---- */
+    if (g->fx_fire != 0 && g->recover == 0.0f && (g->daynight - g->fire_at) > 2.0f){
         int i_17;
         for(i_17 = -1; i_17 < 2; i_17 += 2){
-            int bi = i32(0x99700);
-            f32(0x99580 + bi*0x14) = 20.0f;
-            f32(0x99578 + bi*0x14) = (float)i_17*10.0f + f32(0xc0);
-            f32(0x9957c + bi*0x14) = (float)(i32(0xe0) - 0x1a);
-            *(float*)(S + (bi + 0x7aac)*0x14) = 0.0f;
-            f32(0x99574 + bi*0x14) = f32(0xbc) + 1.5f;
+            int bi = i32(0x99700);              /* round-robin bullet slot */
+            Bullet &bl = g->bullet[bi];
+            bl.life = 20.0f;
+            bl.x    = (float)i_17*10.0f + g->speed;
+            bl.y    = (float)(g->frame - 0x1a);
+            *(float*)(S + (bi + 0x7aac)*0x14) = 0.0f;   /* clears the slot's trailing word (game quirk) */
+            bl.dvx  = g->throttle + 1.5f;
             i32(0x99700) = (bi + 1) % 0x14;
         }
-        f32(0x9a6bc) = f32(0x9a6b4);
+        g->fire_at = g->daynight;
     }
 
-    /* ---- (glow/headlight splat + entity billboards: TODO) ---- */
-
-    /* fold road elevation (0x850ec) into the lighting grid (0x890ec) */
+    /* fold road elevation into the lighting grid */
     { int k; for(k=0;k<0x1000;k++){
-        int l = IA(0x890ec, k);
-        int e = IA(0x850ec, k);
+        int l = g->lighting[k];
+        int e = g->elevation[k];
         if (l < 0) l = 0;
         { int t = l; l = t + e; if (t + e < 0) l = 0; }
         if (l > 0x1e80) l = 0x1e80;
-        IA(0x890ec, k) = l;
+        g->lighting[k] = l;
     } }
 
     game_render(var_14);

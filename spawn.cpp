@@ -2,14 +2,14 @@
  *
  * Faithful translation of game_tick (sub_3c7dcb73), re/hlil.txt 1794-2051,
  * cross-checked against re/asm.txt 3c7ddb5a-3c7ddce5.  Both functions run
- * inside the road-scroll loop; `edi_10 = (-i32(0xdc)) & 0x3f` is the current
- * road-ring row index and `eax_59 = i32(0x9a7e8)` is the barrier countdown.
+ * inside the road-scroll loop; `edi_10 = (-g->scroll_row) & 0x3f` is the current
+ * road-ring row index and `eax_59 = g->barrier_phase` is the barrier countdown.
  *
- * spawn_pattern : hlil 1795-1970 (the `i32(0x9a6c4) s< 1 && i32(0xd4) != 0`
+ * spawn_pattern : hlil 1795-1970 (the `g->spawn_count s< 1 && g->text_toggle != 0`
  *                 guard body — the caller has already tested the guard and
- *                 done `i32(0x9a6c4) -= 1`).  Picks a fresh lane/enemy pattern.
+ *                 done `g->spawn_count -= 1`).  Picks a fresh lane/enemy pattern.
  * barrier_row   : hlil 1972-2051 (the whole `else`/eax_59!=0 branch, including
- *                 the leading `i32(0x9a7e8) = eax_59 - 1`).  Paints one
+ *                 the leading `g->barrier_phase = eax_59 - 1`).  Paints one
  *                 lane-transition / barrier row.
  *
  * State layout (best inference):
@@ -30,9 +30,9 @@ void spawn_pattern(int edi_10)
     (void)edi_10;   /* row index is unused by this branch */
 
     /* reset spawn countdown, choose pattern row eax_131 in [0,6) */
-    i32(0x9a6c4) = 0x28 - FTOL(dh_rand() * -80.0);
+    g->spawn_count = 0x28 - FTOL(dh_rand() * -80.0);
     int eax_131 = FTOL(dh_rand() * 6.0);
-    u8(0x9a7fc) = (unsigned char)eax_131;
+    g->spawn_pat = (unsigned char)eax_131;
 
     /* target occupancy 0x9a6ec[0..5] from the chosen pattern-row bitmask */
     {
@@ -52,7 +52,7 @@ void spawn_pattern(int edi_10)
         int i_7 = 1;
         int *ebx_16 = (int *)(S + 0x9a714);
         int *var_2c_19 = (int *)(S + 0x9a6cc);
-        i32(0xd8) = ((int)(signed char)u8(0x9a7f4 + eax_131) << 2) + 0x14;
+        g->text_col = ((int)(signed char)u8(0x9a7f4 + eax_131) << 2) + 0x14;
         do {
             ebx_16[-1] = i_7;
             ebx_16[0]  = i_7;
@@ -112,7 +112,7 @@ void spawn_pattern(int edi_10)
     }
 
     /* schedule the barrier row and clear the barrier grid */
-    i32(0x9a7e8) = var_8_1 << 2;
+    g->barrier_phase = var_8_1 << 2;
     memset(S + 0x9a748, 0, 0xa0);
 
     /* fill the barrier grid describing how each lane merges/splits */
@@ -195,7 +195,7 @@ void spawn_pattern(int edi_10)
 /* hlil 1972-2051 : paint one lane-transition / barrier row. */
 void barrier_row(int edi_10, int eax_59)
 {
-    i32(0x9a7e8) = eax_59 - 1;
+    g->barrier_phase = eax_59 - 1;
     int temp0_1 = (eax_59 - 1) / 4;
 
     /* build the 6 lane cell-texture columns for this barrier row */
@@ -218,7 +218,7 @@ void barrier_row(int edi_10, int eax_59)
             int j_6 = eax_63 * 6;
             int *edx_10 = (int *)(S + ((eax_63 + (((edi_10 << 4) + i_10) << 2)) << 2) + 0x8d128);
             do {
-                int eax_67 = (i32(0x9a7e8) & 3) + j_6;
+                int eax_67 = (g->barrier_phase & 3) + j_6;
                 j_6 += 6;
                 *edx_10 = IA(0x990f8, edi_11 + eax_67 * 6);
                 edx_10 = &edx_10[1];
@@ -241,7 +241,7 @@ void barrier_row(int edi_10, int eax_59)
                     int edx_11 = (eax_74 == 0xf) ? 1 : 0;
                     int eax_75 = (ecx_8 == 0xf) ? 1 : 0;
                     unsigned char *eax_79;
-                    if (edx_11 != eax_75 || (i32(0xe0) % 6) < 3) eax_79 = S + 0x10e8;
+                    if (edx_11 != eax_75 || (g->frame % 6) < 3) eax_79 = S + 0x10e8;
                     else                                         eax_79 = S + 0xe8;
                     PA(0x8d0ec, (edi_10 << 6) + i_11) = eax_79;
                 } else {

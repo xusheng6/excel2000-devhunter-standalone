@@ -45,10 +45,10 @@
 
 int g_render_shade = 0;    /* game_render arg1 (ambient car-shade base) */
 
-void render_cars(unsigned char *fb, int pitch)   /* fb = pp(0x34), pitch = i32(0x20) */
+void render_cars(unsigned char *fb, int pitch)   /* fb = g->surf, pitch = g->surf_pitch */
 {
-    double camX = f32(0x9c), camY = f32(0xa0);
-    int    e0    = i32(0xe0);
+    double camX = g->camX, camY = g->camY;
+    int    e0    = g->frame;
     int    shade = g_render_shade;                 /* arg1 */
     int    edi_2;
 
@@ -64,15 +64,15 @@ void render_cars(unsigned char *fb, int pitch)   /* fb = pp(0x34), pitch = i32(0
 
         if (edi_2 >= 7) {
             /* ---- player (asm 3c7df1f0) ---- */
-            CARX     = f32(0xc0);                   /* fld [esi+0xc0] -> CARX slot */
+            CARX     = g->speed;                   /* fld [esi+0xc0] -> CARX slot */
             body     = S + 0x70e8;
             window   = S + 0xe0e8;
             roof     = S + 0x150e8;
             CARbaseY = (double)e0 + camY - PLAYEROFF;
             dist14   = (double)e0 + camY - CARbaseY;    /* == 28.0 */
             /* player recovery flash uses field 0x9a6c0, flash when != 0 */
-            if (f32(0x9a6c0) != 0.0f)
-                var_1c_3 = ((0x1e - FTOL((double)f32(0x9a6c0))) << 8) + shade;
+            if (g->recover != 0.0f)
+                var_1c_3 = ((0x1e - FTOL((double)g->recover)) << 8) + shade;
             pose = 0;
         } else {
             /* ---- enemy (asm 3c7deb94) ---- */
@@ -119,9 +119,9 @@ void render_cars(unsigned char *fb, int pitch)   /* fb = pp(0x34), pitch = i32(0
             int texsel = SB(i_3 + 4);
             int s0, s1, s2, s3;
 
-            if      (texsel == 0) pp(0x850e8) = body;
-            else if (texsel == 1) pp(0x850e8) = window;
-            else if (texsel == 2) pp(0x850e8) = roof;
+            if      (texsel == 0) g->cur_tex = body;
+            else if (texsel == 1) g->cur_tex = window;
+            else if (texsel == 2) g->cur_tex = roof;
 
             if (V[v0][1] == V[v1][1])               /* Yscr(v0)==Yscr(v1): degenerate */
                 continue;
@@ -144,37 +144,37 @@ void render_cars(unsigned char *fb, int pitch)   /* fb = pp(0x34), pitch = i32(0
             int texsel2 = SB(i_3 + 6);
             int cross, sh0, sh1, sh2;
 
-            if      (texsel2 == 0) pp(0x850e8) = body;
-            else if (texsel2 == 1) pp(0x850e8) = S + 0x1c0e8;
+            if      (texsel2 == 0) g->cur_tex = body;
+            else if (texsel2 == 1) g->cur_tex = S + 0x1c0e8;
 
             if ((edi_2 == 7 || pose == 3) && i_3 < MESH2_BODY)
-                pp(0x850e8) = body;
+                g->cur_tex = body;
 
             /* triangle A: left side (Xleft, Yscr) */
-            i32(0x9a948) = V[v0][0]; i32(0x9a94c) = V[v0][1];
-            i32(0x9a950) = V[v1][0]; i32(0x9a954) = V[v1][1];
-            i32(0x9a958) = V[v2][0]; i32(0x9a95c) = V[v2][1];
-            cross = (i32(0x9a95c) - i32(0x9a954)) * (i32(0x9a948) - i32(0x9a950))
-                  - (i32(0x9a958) - i32(0x9a950)) * (i32(0x9a94c) - i32(0x9a954));
+            g->tri[0] = V[v0][0]; g->tri[1] = V[v0][1];
+            g->tri[2] = V[v1][0]; g->tri[3] = V[v1][1];
+            g->tri[4] = V[v2][0]; g->tri[5] = V[v2][1];
+            cross = (g->tri[5] - g->tri[3]) * (g->tri[0] - g->tri[2])
+                  - (g->tri[4] - g->tri[2]) * (g->tri[1] - g->tri[3]);
             if (cross <= 0) {                       /* test edx; jg skip -> fill if <=0 */
                 sh0 = (SB(i_3 + 0) << 8) + var_1c_3; if (sh0 > 0x1e80) sh0 = 0x1e80;
                 sh1 = (SB(i_3 + 1) << 8) + var_1c_3; if (sh1 > 0x1e80) sh1 = 0x1e80;
                 sh2 = (SB(i_3 + 2) << 8) + var_1c_3; if (sh2 > 0x1e80) sh2 = 0x1e80;
-                i32(0x9a960) = sh0; i32(0x9a964) = sh1; i32(0x9a968) = sh2;
+                g->tri[6] = sh0; g->tri[7] = sh1; g->tri[8] = sh2;
                 raster_tri(fb, pitch);
             }
 
             /* triangle B: right side (Xright, Yscr copy) */
-            i32(0x9a948) = V[v0][2]; i32(0x9a94c) = V[v0][3];
-            i32(0x9a950) = V[v1][2]; i32(0x9a954) = V[v1][3];
-            i32(0x9a958) = V[v2][2]; i32(0x9a95c) = V[v2][3];
-            cross = (i32(0x9a95c) - i32(0x9a954)) * (i32(0x9a948) - i32(0x9a950))
-                  - (i32(0x9a958) - i32(0x9a950)) * (i32(0x9a94c) - i32(0x9a954));
+            g->tri[0] = V[v0][2]; g->tri[1] = V[v0][3];
+            g->tri[2] = V[v1][2]; g->tri[3] = V[v1][3];
+            g->tri[4] = V[v2][2]; g->tri[5] = V[v2][3];
+            cross = (g->tri[5] - g->tri[3]) * (g->tri[0] - g->tri[2])
+                  - (g->tri[4] - g->tri[2]) * (g->tri[1] - g->tri[3]);
             if (cross >= 0) {                       /* js skip -> fill if >=0 */
                 sh0 = (SB(i_3 + 3) << 8) + var_1c_3; if (sh0 > 0x1e80) sh0 = 0x1e80;
                 sh1 = (SB(i_3 + 4) << 8) + var_1c_3; if (sh1 > 0x1e80) sh1 = 0x1e80;
                 sh2 = (SB(i_3 + 5) << 8) + var_1c_3; if (sh2 > 0x1e80) sh2 = 0x1e80;
-                i32(0x9a960) = sh0; i32(0x9a964) = sh1; i32(0x9a968) = sh2;
+                g->tri[6] = sh0; g->tri[7] = sh1; g->tri[8] = sh2;
                 raster_tri(fb, pitch);
             }
         }
@@ -193,7 +193,7 @@ void render_cars(unsigned char *fb, int pitch)   /* fb = pp(0x34), pitch = i32(0
             denom = C86 - (zc * COS10 + K3473);
             Yscr  = FTOL((zc * SIN10 + K1969) * FOCAL / denom) - 0xce;
             Xscr  = 0x140 - FTOL(((double)f32(b - 4) - camX) * XFOCAL / denom);
-            i32(0x9a80c) = Yscr;                    /* stored unconditionally */
+            g->f_9a80c = Yscr;                    /* stored unconditionally */
             if (Yscr > -1 && Yscr < 0x1e0) {        /* note: no X bound check for bullets */
                 unsigned char *p = fb + pitch * Yscr + Xscr;
                 p[0] = 0x88;

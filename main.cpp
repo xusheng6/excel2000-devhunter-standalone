@@ -44,23 +44,23 @@ static LRESULT CALLBACK WndProc(HWND h,UINT m,WPARAM wp,LPARAM lp){
     switch(m){
     case WM_KEYDOWN:
         switch(wp){
-        case VK_DOWN:  i32(0xb0)=1; break;
-        case VK_RIGHT: i32(0xa4)=1; break;
-        case VK_SPACE: i32(0x9a6b0)=1; break;
-        case VK_LEFT:  i32(0xa8)=1; break;
-        case VK_UP:    i32(0xac)=1; break;
-        case 'H':      i32(0x9a6a8) ^= 1; break;
-        case 'O':      i32(0x9a6ac)=1; break;
+        case VK_DOWN:  g->key_down=1; break;
+        case VK_RIGHT: g->key_gas=1; break;
+        case VK_SPACE: g->fx_fire=1; break;
+        case VK_LEFT:  g->key_brake=1; break;
+        case VK_UP:    g->key_up=1; break;
+        case 'H':      g->fx_names ^= 1; break;
+        case 'O':      g->fx_weapon=1; break;
         case VK_ESCAPE: case VK_F12: PostMessage(h,WM_CLOSE,0,0); break;
         } return 0;
     case WM_KEYUP:
         switch(wp){
-        case VK_SPACE: i32(0x9a6b0)=0; break;
-        case VK_LEFT:  i32(0xa8)=0; break;
-        case VK_UP:    i32(0xac)=0; break;
-        case VK_RIGHT: i32(0xa4)=0; break;
-        case VK_DOWN:  i32(0xb0)=0; break;
-        case 'O':      i32(0x9a6ac)=0; break;
+        case VK_SPACE: g->fx_fire=0; break;
+        case VK_LEFT:  g->key_brake=0; break;
+        case VK_UP:    g->key_up=0; break;
+        case VK_RIGHT: g->key_gas=0; break;
+        case VK_DOWN:  g->key_down=0; break;
+        case 'O':      g->fx_weapon=0; break;
         } return 0;
     case WM_SETCURSOR: SetCursor(NULL); return 1;
     case WM_CLOSE: DestroyWindow(h); return 0;
@@ -101,11 +101,11 @@ static void boot(void){
     memset(g_fb,0,FB_PITCH*SCR_H);
     build_pal32();
     /* letter atlas font (setmode created Tahoma 64 black) */
-    i32(0x9a920) = (int)(INT_PTR)CreateFont(64,16,0,0,FW_BLACK,0,0,0,ANSI_CHARSET,
+    g->letter_font = (int)(INT_PTR)CreateFont(64,16,0,0,FW_BLACK,0,0,0,ANSI_CHARSET,
         OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,DEFAULT_PITCH,"Tahoma");
     /* surface = our 8-bit framebuffer */
-    i32(0x20) = FB_PITCH;
-    i32(0x34) = (int)(INT_PTR)g_fb;
+    g->surf_pitch = FB_PITCH;
+    g->surf = g_fb;
     game_init();
 }
 
@@ -117,13 +117,13 @@ int WINAPI WinMain(HINSTANCE hi,HINSTANCE hp,LPSTR cmd,int show){
         int frames=1,i; char outp[260]="shot.ppm";
         sscanf(cmd,"%*s %d %259s",&frames,outp);
         make_window(); timeBeginPeriod(1); boot();
-        i32(0xac)=1;   /* simulate accelerator so the road scrolls */
-        for(i=0;i<frames;i++){ i32(0xb4)=dh_time()-20; game_tick(); }
+        g->key_up=1;   /* simulate accelerator so the road scrolls */
+        for(i=0;i<frames;i++){ g->frame_timer=dh_time()-20; game_tick(); }
         dump_ppm(outp); return 0;
     }
 
     make_window(); timeBeginPeriod(1); boot();
-    i32(0xb4)=dh_time();
+    g->frame_timer=dh_time();
     for(;;){
         while(PeekMessage(&msg,NULL,0,0,PM_REMOVE)){
             if(msg.message==WM_QUIT){ timeEndPeriod(1); return 0; }

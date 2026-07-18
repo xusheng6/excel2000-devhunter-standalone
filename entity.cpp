@@ -50,7 +50,7 @@ void entity_update(float var_10, float var_18)
 
             /* despawn if x outside [E-0x41, E+0xc] (1291-1315) */
             {
-                int E = i32(0xe0);
+                int E = g->frame;
                 int cond0 = ((double)(E + 0xc) < (double)edi_6[2]);   /* E+12 < x */
                 int gt2   = 0;
                 if (!cond0)
@@ -61,22 +61,22 @@ void entity_update(float var_10, float var_18)
 
             /* proximity lerp toward player (1317-1395) */
             if (edi_6[6] > 20.0f) {
-                if (dh_fabs((double)edi_6[2] - (double)(i32(0xe0) - 0x1a)) < 5.0) {
-                    if (dh_fabs((double)edi_6[1] - (double)f32(0xc0)) < 40.0) {
+                if (dh_fabs((double)edi_6[2] - (double)(g->frame - 0x1a)) < 5.0) {
+                    if (dh_fabs((double)edi_6[1] - (double)g->speed) < 40.0) {
                         double mx, mn, d14, d15;
 
-                        edi_6[-1] = f32(0xb8);
-                        if (!(f32(0xbc) < edi_6[0])) mx = f32(0xbc); else mx = edi_6[0];  /* max */
-                        if (f32(0xbc) <= edi_6[0])   mn = f32(0xbc); else mn = edi_6[0];  /* min */
+                        edi_6[-1] = g->steer;
+                        if (!(g->throttle < edi_6[0])) mx = g->throttle; else mx = edi_6[0];  /* max */
+                        if (g->throttle <= edi_6[0])   mn = g->throttle; else mn = edi_6[0];  /* min */
                         d14 = (double)(float)mx - mn;
-                        if (!((double)(i32(0xe0) - 0x1a) < (double)edi_6[2])) {
+                        if (!((double)(g->frame - 0x1a) < (double)edi_6[2])) {
                             edi_6[0] = (float)(d14 * 0.100000001f + mn);
                             d15 = d14 * 0.899999976f;
                         } else {
                             edi_6[0] = (float)(d14 * 0.899999976f + mn);
                             d15 = d14 * 0.100000001f;
                         }
-                        f32(0xbc) = (float)(d15 + mn);
+                        g->throttle = (float)(d15 + mn);
                     }
                 }
             }
@@ -117,9 +117,9 @@ void entity_update(float var_10, float var_18)
             /* grid-cell lookup -> collision with map / bullets (1495-1544) */
             {
                 int eax_35 = FTOL((double)edi_6[1] * 0.050000000000000003 + 31.5);
-                int eax_36 = i32(0xe0);
+                int eax_36 = g->frame;
                 int eax_37 = FTOL(((64.0 - (double)edi_6[2] + (double)eax_36
-                                    - (double)i32(0xdc)) + 2.0));
+                                    - (double)g->scroll_row) + 2.0));
                 int ebx_3 = eax_35 + ((eax_37 & 0x3f) << 6);
 
                 if (PA(0x8d0ec, ebx_3) == S + 0x20e8) {

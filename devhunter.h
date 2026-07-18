@@ -86,7 +86,8 @@ struct DevHunter {
     char  _pad_e4[4];                /* 0xe4 */
 
     /* ---- 0xe8: cell-texture prototypes + 3D letter tiles (0x1000-byte banks) ---- */
-    unsigned char tex[0x850ec - 0xe8]; /* 0xe8 -> 0x850ec */
+    unsigned char tex[0x850e8 - 0xe8]; /* 0xe8 -> 0x850e8 */
+    unsigned char *cur_tex;            /* 0x850e8  scratch: texture the rasterizer reads */
 
     /* ---- 64x64 road grids ---- */
     int   elevation[0x1000];         /* 0x850ec  road height -> shadow */
@@ -94,7 +95,7 @@ struct DevHunter {
     unsigned char *texptr[0x1000];   /* 0x8d0ec  per-cell texture pointer */
 
     unsigned char *text_buf[2];      /* 0x910ec,0x910f0  decrypted credit/taunt buffers */
-    int  *splat_target;              /* 0x910f4  glow-splat destination grid */
+    unsigned char *splat_target;     /* 0x910f4  glow-splat destination grid (elevation or lighting) */
     int   lut[(0x990f8 - 0x910f8)/4];/* 0x910f8  texel+shade -> palette LUT */
     int   colorscheme[(0x99454 - 0x990f8)/4]; /* 0x990f8 */
 
@@ -145,7 +146,8 @@ CK(surf_pitch,0x20); CK(surf,0x34); CK(camX,0x9c); CK(camY,0xa0);
 CK(key_gas,0xa4); CK(key_down,0xb0); CK(frame_timer,0xb4);
 CK(steer,0xb8); CK(throttle,0xbc); CK(speed,0xc0); CK(lateral,0xc4);
 CK(text_cur,0xc8); CK(text_stream,0xd0); CK(scroll_row,0xdc); CK(frame,0xe0);
-CK(tex,0xe8); CK(elevation,0x850ec); CK(lighting,0x890ec); CK(texptr,0x8d0ec);
+CK(tex,0xe8); CK(cur_tex,0x850e8);
+CK(elevation,0x850ec); CK(lighting,0x890ec); CK(texptr,0x8d0ec);
 CK(text_buf,0x910ec); CK(splat_target,0x910f4); CK(lut,0x910f8);
 CK(enemy,0x99454); CK(bullet,0x99574); CK(debris,0x99704);
 CK(debris_idx,0x9a6a4); CK(fx_names,0x9a6a8); CK(fx_fire,0x9a6b0);

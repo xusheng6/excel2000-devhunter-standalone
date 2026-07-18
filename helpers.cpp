@@ -16,7 +16,7 @@ double dh_fabs(double v){ return v<0?-v:v; }       /* sub_3c8f74d4 */
 int spawn_burst(float ax, float ay, float avx, float avy){
     int i_1 = 0x42, i, ret = 0;
     do {
-        int idx = i32(0x9a6a4);
+        int idx = g->debris_idx;
         double ang = dh_rand()*6.2834;
         double mag = dh_rand();
         double s   = sin(ang);
@@ -30,7 +30,7 @@ int spawn_burst(float ax, float ay, float avx, float avy){
         *(float*)(S + idx*0x14 + 0x9970c) = (float)(r5 + ax);
         *(float*)(S + idx*0x14 + 0x99710) = (float)(r13 + ay);
         i = i_1; i_1--;
-        i32(0x9a6a4) = (idx+1) % 0xc8;
+        g->debris_idx = (idx+1) % 0xc8;
         ret = (idx+1) / 0xc8;
     } while (i != 1);
     return ret;
@@ -47,9 +47,9 @@ int splat(double x, double y, int amt){
     int col1= (ix+1)&0x3f;
     int row1= ((iy+1)&0x3f)<<6;
     int r;
-    unsigned char *base = pp(0x910f4);
+    unsigned char *base = g->splat_target;
     *(int*)(base + ((row +col )<<2)) += ((0x100-yf)*(0x100-xf)*amt) >> 0x10;
-    *(int*)(pp(0x910f4) + ((row +col1)<<2)) += ((0x100-yf)*xf*amt) >> 0x10;
+    *(int*)(g->splat_target + ((row +col1)<<2)) += ((0x100-yf)*xf*amt) >> 0x10;
     *(int*)(base + ((col +row1)<<2)) += (yf*(0x100-xf)*amt) >> 0x10;
     r = (yf*xf*amt) >> 0x10;
     *(int*)(base + ((col1+row1)<<2)) += r;
@@ -60,7 +60,7 @@ int splat(double x, double y, int amt){
 int raster_span(unsigned char *arg2, int arg3, int arg4, int arg5, int arg6,
                 int arg7, int arg8, int arg9, int arg10, int arg11,
                 int arg12, int arg13){
-    unsigned char *tex = pp(0x850e8);
+    unsigned char *tex = g->cur_tex;
     int var8  = arg10<<2, ebx = arg4, var10 = arg11<<2;
     int esi1  = arg5-ebx, var14 = 0;
     int temp0, temp0_1, temp0_2, ecx1, edx4, result;
@@ -100,30 +100,30 @@ int raster_span(unsigned char *arg2, int arg3, int arg4, int arg5, int arg6,
 
 /* sub_3c7de4a2: y-sort three verts (0x9a948..0x9a968) -> up to two spans */
 int raster_tri(unsigned char *arg2, int arg3){
-    int ebx=i32(0x9a954), var20=i32(0x9a948), edx=i32(0x9a950), result_1=i32(0x9a94c);
-    int var28=edx, var18=i32(0x9a958), eax_3=i32(0x9a95c), var14=eax_3, result;
+    int ebx=g->tri[3], var20=g->tri[0], edx=g->tri[2], result_1=g->tri[1];
+    int var28=edx, var18=g->tri[4], eax_3=g->tri[5], var14=eax_3, result;
     if (ebx>eax_3){
         int edx_1=edx^var18, ebx_1=ebx^eax_3, eax_4;
-        i32(0x9a964)^=i32(0x9a968); eax_4=eax_3^ebx_1; var18^=edx_1; edx=edx_1^var18;
-        var14=eax_4; ebx=ebx_1^eax_4; i32(0x9a968)^=i32(0x9a964); i32(0x9a964)^=i32(0x9a968); var28=edx;
+        g->tri[7]^=g->tri[8]; eax_4=eax_3^ebx_1; var18^=edx_1; edx=edx_1^var18;
+        var14=eax_4; ebx=ebx_1^eax_4; g->tri[8]^=g->tri[7]; g->tri[7]^=g->tri[8]; var28=edx;
     }
     if (result_1>ebx){
         int var_1c=result_1^ebx, var20_1;
-        i32(0x9a960)^=i32(0x9a964); var20_1=var20^edx; ebx^=var_1c; edx^=var20_1;
-        result_1=var_1c^ebx; i32(0x9a964)^=i32(0x9a960); var20=var20_1^edx; i32(0x9a960)^=i32(0x9a964); var28=edx;
+        g->tri[6]^=g->tri[7]; var20_1=var20^edx; ebx^=var_1c; edx^=var20_1;
+        result_1=var_1c^ebx; g->tri[7]^=g->tri[6]; var20=var20_1^edx; g->tri[6]^=g->tri[7]; var28=edx;
     }
     if (ebx>var14){
         int edx_2=edx^var18, ebx_2;
-        i32(0x9a964)^=i32(0x9a968); ebx_2=ebx^var14; var18^=edx_2; edx=edx_2^var18;
-        var14^=ebx_2; ebx=ebx_2^var14; i32(0x9a968)^=i32(0x9a964); var28=edx; i32(0x9a964)^=i32(0x9a968);
+        g->tri[7]^=g->tri[8]; ebx_2=ebx^var14; var18^=edx_2; edx=edx_2^var18;
+        var14^=ebx_2; ebx=ebx_2^var14; g->tri[8]^=g->tri[7]; var28=edx; g->tri[7]^=g->tri[8];
     }
     result=result_1;
     if (var14!=result){
-        int ecx_7=ebx-result, edi_8=var14-result, var_c_1=edx, var_8_1=i32(0x9a964), ecx_8=i32(0x9a960);
+        int ecx_7=ebx-result, edi_8=var14-result, var_c_1=edx, var_8_1=g->tri[7], ecx_8=g->tri[6];
         int edi_10, result_2;
         if(edi_8==0) return result;
         edi_10=((var18-var20)*ecx_7)/edi_8+var20;
-        result=((i32(0x9a968)-i32(0x9a960))*ecx_7)/edi_8+ecx_8; result_2=result;
+        result=((g->tri[8]-g->tri[6])*ecx_7)/edi_8+ecx_8; result_2=result;
         if (var28>edi_10){
             int var_8_2=var_8_1^result, edx_8=edi_10^var28;
             result^=var_8_2; edi_10^=edx_8; result_2=result; var_8_1=var_8_2^result; var_c_1=edx_8^edi_10;
@@ -133,7 +133,7 @@ int raster_tri(unsigned char *arg2, int arg3){
             result=result_2;
         }
         if (var14!=ebx){
-            int ecx_11=i32(0x9a968);
+            int ecx_11=g->tri[8];
             return raster_span(arg2,arg3,ebx,var14,var_c_1,edi_10+1,var18,var18+1,var_8_1,result,ecx_11,ecx_11);
         }
     }
