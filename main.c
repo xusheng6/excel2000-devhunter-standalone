@@ -115,6 +115,7 @@ int WINAPI WinMain(HINSTANCE hi,HINSTANCE hp,LPSTR cmd,int show){
         int frames=1,i; char outp[260]="shot.ppm";
         sscanf(cmd,"%*s %d %259s",&frames,outp);
         make_window(); timeBeginPeriod(1); boot();
+        i32(0xac)=1;   /* simulate accelerator so the road scrolls */
         for(i=0;i<frames;i++){ i32(0xb4)=dh_time()-20; game_tick(); }
         dump_ppm(outp); return 0;
     }

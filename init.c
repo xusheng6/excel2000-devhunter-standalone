@@ -13,11 +13,12 @@
 #include "dh.h"
 #include "data.h"
 
-#define INIT_BASE 0x5e0000u          /* THIS address when init_state.bin was captured */
+#define INIT_BASE 0x6a0000u          /* THIS address when init_state.bin was captured (post-init) */
 
 void game_init(void){
     FILE *f = fopen("init_state.bin","rb");
     long n; int i; unsigned int delta;
+    unsigned char *b1, *b2;
     if(!f){ MessageBoxA(0,"init_state.bin not found","Dev Hunter",0); ExitProcess(1); }
     fseek(f,0,SEEK_END); n=ftell(f); fseek(f,0,SEEK_SET);
     fread(S,1,n,f); fclose(f);
@@ -25,6 +26,13 @@ void game_init(void){
     delta = (unsigned int)(INT_PTR)S - INIT_BASE;
     for(i=0;i+4<=(int)n;i+=4){ unsigned int v=*(unsigned int*)(S+i);
         if(v>=INIT_BASE && v<INIT_BASE+0x9a96cu) *(unsigned int*)(S+i)=v+delta; }
+    /* the two text streams are separate heap allocations in the original; recreate
+     * them from the decrypted credits and re-point the buffer + cursor fields. */
+    b1=(unsigned char*)malloc(sizeof g_text1); memcpy(b1,g_text1,sizeof g_text1);
+    b2=(unsigned char*)malloc(sizeof g_text2); memcpy(b2,g_text2,sizeof g_text2);
+    pp(0x910ec)=b1; pp(0x910f0)=b2;
+    pp(0xc8)=b1; pp(0xcc)=b2;          /* stream cursors at start */
+    i32(0xd0)=0; i32(0xd4)=1; i32(0xd8)=0x14;
     /* our 8-bit framebuffer replaces the DirectDraw surface; make a letter font */
     i32(0x20)=FB_PITCH;
     i32(0x34)=(int)(INT_PTR)g_fb;
