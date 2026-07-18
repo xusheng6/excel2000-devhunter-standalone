@@ -80,7 +80,7 @@ int raster_span(unsigned char *arg2, int arg3, int arg4, int arg5, int arg6,
         for(;;){
             int ebx1=var8, ecx5=eax27/esi1+arg6, esi2=0;
             int eax33=edi2/esi1+arg7, arg4v=eax33, edi4=eax33-ecx5;
-            int eax41=(var14>>5)&0xe0, temp0_5,temp0_6,k;
+            int eax41=(var14>>5)&0xffffffe0, temp0_5,temp0_6,k; /* asm: and al,0xe0 (low byte only) */
             if(edi4!=0){ temp0_5=(var10-ebx1)/edi4; temp0_6=0x8000/edi4; } else { temp0_5=temp0_6=0; }
             if(ecx5<0){ edi4=arg4v; ebx1-=temp0_5*ecx5; esi2=-(temp0_6*ecx5); ecx5=0; }
             if(arg4v>0x280){ arg4v=0x280; edi4=0x280-ecx5; }
