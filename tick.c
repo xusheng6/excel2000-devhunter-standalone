@@ -139,10 +139,39 @@ void game_tick(void){
             i32(0x9a7e8) = eax_59 - 1;
             /* barrier/lane-transition row generation: TODO */
         }
-        /* elevation generation for the new row: TODO (uses embedded values for now) */
+        /* elevation (road shadow) generation for the new row */
+        { int next_base = ((edi_10+1)&0x3f) << 6;
+          int cur_base  = edi_10 << 6;
+          int v3;
+          for(v3=1; v3<=0x40; v3++){
+              int col = v3-1, add = 0;
+              int ebx_8 = ( IA(0x850ec, ((v3-2)&0x3f) + next_base)
+                          + IA(0x850ec, ( v3   &0x3f) + next_base)
+                          + (IA(0x850ec, next_base + col) << 1) ) >> 2;
+              double r = dh_rand() * 10.0;
+              if (r < 2.0) add = FTOL(r*512.0);
+              else if (r > 7.99) add = FTOL((r-10.0)*512.0);
+              if (PA(0x8d0ec, cur_base+col) == S+0x20e8) add <<= 2;
+              { int e = ebx_8 + add;
+                if (e < 0) e = 0;
+                if (e > 0x1400) e = 0x1400;
+                if (e > 0xa00 && PA(0x8d0ec, cur_base+col) != S+0x20e8) e -= 0x100;
+                IA(0x850ec, cur_base+col) = e; }
+          }
+        }
     }
 
     /* ---- (glow/headlight splat + entity billboards: TODO) ---- */
+
+    /* fold road elevation (0x850ec) into the lighting grid (0x890ec) */
+    { int k; for(k=0;k<0x1000;k++){
+        int l = IA(0x890ec, k);
+        int e = IA(0x850ec, k);
+        if (l < 0) l = 0;
+        { int t = l; l = t + e; if (t + e < 0) l = 0; }
+        if (l > 0x1e80) l = 0x1e80;
+        IA(0x890ec, k) = l;
+    } }
 
     game_render(var_14);
 }
