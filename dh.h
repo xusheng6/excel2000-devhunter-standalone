@@ -52,6 +52,7 @@ int    splat(double sx,double sy,int amt);          /* sub_3c7dca79 */
 void   game_init(void);                             /* sub_3c7df259 */
 void   game_tick(void);                             /* sub_3c7dcb73 */
 void   game_render(int shade);                      /* sub_3c7de915 */
+void   entity_update(float var_10, float var_18);   /* tick entity loops (entity.c) */
 
 unsigned int dh_time(void);
 

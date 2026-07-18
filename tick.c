@@ -8,6 +8,7 @@
 
 void game_tick(void){
     float var_10;   /* dt (ms * 0.02) */
+    float var_18;   /* 1 - dt*0.04 (velocity decay) */
     int   var_14;   /* ambient shade (day/night) */
     int   i;
 
@@ -15,7 +16,8 @@ void game_tick(void){
     { int eax = (int)dh_time();
       int dt  = eax - i32(0xb4);
       i32(0xb4) = eax;
-      var_10 = (float)dt * 0.0199999996f; }
+      var_10 = (float)dt * 0.0199999996f;
+      var_18 = 1.0f - var_10*0.04f; }
 
     /* ---- day/night ambient from timer 0x9a6b4 ---- */
     { float x = f32(0x9a6b4);
@@ -31,12 +33,8 @@ void game_tick(void){
     /* fill lighting grid with ambient */
     for(i=0;i<0x1000;i++) IA(0x890ec, i) = var_14;
 
-    /* ---- (enemy spawn + updates: TODO) ---- */
-    { float fire_gap = f32(0x9a6b4) - f32(0x9a6b8);
-      if (fire_gap > 25.0f) f32(0x9a6b8) = f32(0x9a6b4); }   /* keep timer sane; full spawn TODO */
-
     /* ---- player physics ---- */
-    { float var_18 = 1.0f - var_10*0.04f;
+    {
       if (f32(0x9a6c0) != 0.0f){                    /* crash recovery */
           float r = f32(0x9a6c0) - var_10;
           f32(0x9a6c0)=r; f32(0xbc)=0.0f; f32(0xb8)=0.0f;
@@ -50,6 +48,7 @@ void game_tick(void){
           if (i32(0xb0)){ float v=f32(0xbc) - var_10*0.200000003f; f32(0xbc)=v; if(v<0.0f) f32(0xbc)=0.0f; }
       }
       f32(0xc0) = f32(0xbc)*0.217391312f * f32(0xb8) * var_10 + f32(0xc0);
+      (void)var_18;
       { float d = var_10 * f32(0xbc);
         f32(0xc4) = d + f32(0xc4);
         f32(0xa0) = d + f32(0xa0); }
@@ -65,6 +64,11 @@ void game_tick(void){
       }
       (void)var_18;
     }
+
+    /* ---- enemy / bullet / debris updates ---- */
+    entity_update(var_10, var_18);
+
+    f32(0x9c) = f32(0xc0);   /* camera lateral = speed (steering curves the road) */
 
     /* ---- road scroll: emit new rows as the odometer (0xa0) advances ---- */
     while(f32(0xa0) >= 1.0f){
