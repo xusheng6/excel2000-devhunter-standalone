@@ -133,11 +133,11 @@ void game_tick(void){
                 }
               }
             }
-            /* spawn countdown (enemy lane setup: TODO) */
+            /* spawn countdown -> pick a new lane/enemy pattern */
             i32(0x9a6c4) -= 1;
+            if (i32(0x9a6c4) < 1 && i32(0xd4) != 0) spawn_pattern(edi_10);
         } else {
-            i32(0x9a7e8) = eax_59 - 1;
-            /* barrier/lane-transition row generation: TODO */
+            barrier_row(edi_10, eax_59);   /* sets 0x9a7e8 = eax_59-1 internally */
         }
         /* elevation (road shadow) generation for the new row */
         { int next_base = ((edi_10+1)&0x3f) << 6;
@@ -159,6 +159,21 @@ void game_tick(void){
                 IA(0x850ec, cur_base+col) = e; }
           }
         }
+    }
+
+    /* ---- fire bullets on Space (0x9a6b0), 2-shot spread ---- */
+    if (i32(0x9a6b0) != 0 && f32(0x9a6c0) == 0.0f && (f32(0x9a6b4) - f32(0x9a6bc)) > 2.0f){
+        int i_17;
+        for(i_17 = -1; i_17 < 2; i_17 += 2){
+            int bi = i32(0x99700);
+            f32(0x99580 + bi*0x14) = 20.0f;
+            f32(0x99578 + bi*0x14) = (float)i_17*10.0f + f32(0xc0);
+            f32(0x9957c + bi*0x14) = (float)(i32(0xe0) - 0x1a);
+            *(float*)(S + (bi + 0x7aac)*0x14) = 0.0f;
+            f32(0x99574 + bi*0x14) = f32(0xbc) + 1.5f;
+            i32(0x99700) = (bi + 1) % 0x14;
+        }
+        f32(0x9a6bc) = f32(0x9a6b4);
     }
 
     /* ---- (glow/headlight splat + entity billboards: TODO) ---- */

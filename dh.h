@@ -53,6 +53,8 @@ void   game_init(void);                             /* sub_3c7df259 */
 void   game_tick(void);                             /* sub_3c7dcb73 */
 void   game_render(int shade);                      /* sub_3c7de915 */
 void   entity_update(float var_10, float var_18);   /* tick entity loops (entity.c) */
+void   spawn_pattern(int edi_10);                   /* tick lane/enemy pattern (spawn.c) */
+void   barrier_row(int edi_10, int eax_59);         /* tick lane-transition row (spawn.c) */
 
 unsigned int dh_time(void);
 
