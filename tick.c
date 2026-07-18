@@ -5,6 +5,7 @@
  */
 #include <string.h>
 #include "dh.h"
+#include "data.h"
 
 void game_tick(void){
     float var_10;   /* dt (ms * 0.02) */
@@ -32,6 +33,35 @@ void game_tick(void){
 
     /* fill lighting grid with ambient */
     for(i=0;i<0x1000;i++) IA(0x890ec, i) = var_14;
+
+    /* ---- spawn a new enemy car when the spawn timer allows ---- */
+    if ((f32(0x9a6b4) - f32(0x9a6b8)) > 25.0f){
+        int e;
+        for(e=0;e<7;e++){
+            int b = e*0x28;
+            if (f32(b + 0x99474) <= 0.0f){          /* found an inactive slot */
+                int pat = (signed char)u8(0x9a7fc);
+                int lane = FTOL(dh_rand() * (double)(signed char)TAB(0x3c7ad10c + pat))
+                         + (signed char)TAB(0x3c7ad104 + pat);
+                float lanepos = (float)(lane * 0x54) - 210.0f;
+                float vx = (float)(dh_rand() * 3.6);
+                f32(b + 0x99474) = 100.0f;           /* timer = alive */
+                i32(b + 0x9946c) = lane;
+                f32(b + 0x99470) = lanepos;          /* target-y */
+                f32(b + 0x99460) = lanepos;          /* y */
+                f32(b + 0x9945c) = vx;               /* vx */
+                f32(b + 0x99458) = 0.0f;             /* vy */
+                f32(b + 0x99464) = (vx >= f32(0xbc)) ? (float)(i32(0xe0) - 0x41)
+                                                     : (float)(i32(0xe0) + 0xa);   /* x */
+                i32(b + 0x99478) = 1 - FTOL(dh_rand() * -6.0);   /* colour variant */
+                { double r = dh_rand() * 5.0;
+                  if (FTOL(r) == 2 && (r - 2.0) < 0.5) r = 0.5;
+                  i32(b + 0x9947c) = FTOL(r); }      /* pose */
+                break;
+            }
+        }
+        f32(0x9a6b8) = f32(0x9a6b4);
+    }
 
     /* ---- player physics ---- */
     {
