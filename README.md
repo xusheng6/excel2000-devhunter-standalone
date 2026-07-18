@@ -82,10 +82,12 @@ devhunter.exe --shot 120 out.ppm
 
 ## Status
 
-Complete and playable. The one piece not yet translated is the night‑section
-**headlight glow** (the `H`‑toggle overlay and the sprite‑glow splat); everything
-else — road, text, shadows, physics, cars, enemies, bullets, lanes/barriers — is
-translated and matches the original.
+**Complete.** Every game function is translated from the disassembly and verified
+against the original running live under the Binary Ninja debugger — the perspective
+road renderer + software rasterizer, player physics, road/lane/barrier generation,
+scrolling dev‑name text, elevation shadows, car sprites, enemies, bullets, the
+off‑road crash/spin‑out, and the night‑section headlight glow. `init`'s one‑time
+deterministic setup is loaded from a captured snapshot (`init_state.bin`).
 
 ## Credits
 
