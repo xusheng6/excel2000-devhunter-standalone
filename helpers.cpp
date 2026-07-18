@@ -23,12 +23,13 @@ int spawn_burst(float ax, float ay, float avx, float avy){
         double c   = cos(ang);
         double r13 = c*mag*0.375;
         float  r5;
-        *(float*)(S + (idx + 0x7ac1)*0x14) = (float)(dh_rand() + 20.0);
-        *(float*)(S + idx*0x14 + 0x99704) = (float)(avx + s*mag*6.0);
-        r5 = (float)(avy + r13);
-        *(float*)(S + idx*0x14 + 0x99708) = r5;
-        *(float*)(S + idx*0x14 + 0x9970c) = (float)(r5 + ax);
-        *(float*)(S + idx*0x14 + 0x99710) = (float)(r13 + ay);
+        Debris &d = g->debris[idx];
+        d.life = (float)(dh_rand() + 20.0);
+        d.vx   = (float)(avx + s*mag*6.0);
+        r5     = (float)(avy + r13);
+        d.vy   = r5;
+        d.x    = (float)(r5 + ax);
+        d.y    = (float)(r13 + ay);
         i = i_1; i_1--;
         g->debris_idx = (idx+1) % 0xc8;
         ret = (idx+1) / 0xc8;
@@ -88,7 +89,7 @@ int raster_span(unsigned char *arg2, int arg3, int arg4, int arg5, int arg6,
               for(k=0;k<edi4;k++){
                 int texval=*(int*)(tex+(((esi2>>0xa)+eax41)<<2));
                 int idx=texval+((ebx1>>2)&0x1f00);
-                *row++ = (unsigned char)IA(0x910f8, idx);
+                *row++ = (unsigned char)g->lut[idx];
                 ebx1+=temp0_5; esi2+=temp0_6; } }
             arg2+=arg3; var8+=temp0; var10+=temp0_1; var14+=temp0_2;
             eax27+=eax26; edi2+=result_1;

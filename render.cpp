@@ -59,13 +59,13 @@ void game_render(int shade){
             if(left < right && left <= 0x27f && right > 0){
                 int r0 = ebx*0x40 + edi;
                 int r1 = ((ebx+1)&0x3f)*0x40 + edi;
-                g->cur_tex = PA(0x8d0ec, r0);      /* cell texture */
+                g->cur_tex = g->texptr[r0];        /* cell texture */
                 raster_span(fb, pitch,
                     SY[ebx], SY[ebx+1],             /* y top / bottom */
                     V[M], V[M+1],                    /* x top-left / top-right */
                     V[M+0x41], V[M+0x42],            /* x bottom-left / bottom-right */
-                    IA(0x890ec, r0), IA(0x890ec, r0+1),   /* shade top l/r */
-                    IA(0x890ec, r1), IA(0x890ec, r1+1));  /* shade bottom l/r */
+                    g->lighting[r0], g->lighting[r0+1],   /* shade top l/r */
+                    g->lighting[r1], g->lighting[r1+1]);  /* shade bottom l/r */
             }
         }
       }
