@@ -203,14 +203,14 @@ void game_tick(void){
     if (g->fx_fire != 0 && g->recover == 0.0f && (g->daynight - g->fire_at) > 2.0f){
         int i_17;
         for(i_17 = -1; i_17 < 2; i_17 += 2){
-            int bi = i32(0x99700);              /* round-robin bullet slot */
+            int bi = g->fire_slot;              /* round-robin bullet slot */
             Bullet &bl = g->bullet[bi];
             bl.life = 20.0f;
             bl.x    = (float)i_17*10.0f + g->speed;
             bl.y    = (float)(g->frame - 0x1a);
-            *(float*)(S + (bi + 0x7aac)*0x14) = 0.0f;   /* clears the slot's trailing word (game quirk) */
-            bl.dvx  = g->throttle + 1.5f;
-            i32(0x99700) = (bi + 1) % 0x14;
+            bl.vx   = 0.0f;
+            bl.vy   = g->throttle + 1.5f;
+            g->fire_slot = (bi + 1) % 0x14;
         }
         g->fire_at = g->daynight;
     }

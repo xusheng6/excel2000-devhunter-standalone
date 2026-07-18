@@ -36,12 +36,12 @@ struct Enemy {          /* stride 0x28; array starts at 0x99454 */
     /* `pose` (would be +0x28) lands in the next Enemy's slot0 — see poseOf() */
 };
 
-struct Bullet {         /* stride 0x14; array-of-5-floats at 0x99574 */
-    float dvx;          /* +0x00 (0x99574) */
-    float x;            /* +0x04 (0x99578) */
-    float y;            /* +0x08 (0x9957c) */
-    float life;         /* +0x0c (0x99580) */
-    float f4;           /* +0x10 (0x99584) */
+struct Bullet {         /* stride 0x14; array at 0x99570 */
+    float vx;           /* +0x00 (0x99570) */
+    float vy;           /* +0x04 (0x99574) */
+    float x;            /* +0x08 (0x99578) */
+    float y;            /* +0x0c (0x9957c) */
+    float life;         /* +0x10 (0x99580) */
 };
 
 struct Debris {         /* stride 0x14; array-of-5-floats at 0x99704 */
@@ -100,10 +100,11 @@ struct DevHunter {
     int   colorscheme[(0x99454 - 0x990f8)/4]; /* 0x990f8 */
 
     /* ---- entities ---- */
-    Enemy  enemy[7];                 /* 0x99454 (7 enemies) */
-    char   _e_gap[0x99574 - (0x99454 + 7*sizeof(Enemy))]; /* holds enemy[6].pose too */
-    Bullet bullet[0x14];             /* 0x99574 (ends exactly at debris) */
-    Debris debris[0xc8];             /* 0x99704 (ends exactly at debris_idx) */
+    Enemy  enemy[7];                 /* 0x99454 (7 enemies, stride 0x28) */
+    int    enemy6_pose;              /* 0x9956c  enemy[6].pose (packs after the array) */
+    Bullet bullet[0x14];             /* 0x99570  {vx,vy,x,y,life} */
+    int    fire_slot;                /* 0x99700  round-robin next-bullet index */
+    Debris debris[0xc8];             /* 0x99704  (ends exactly at debris_idx) */
 
     /* ---- game state block ---- */
     int   debris_idx;                /* 0x9a6a4  debris write index */
@@ -149,7 +150,8 @@ CK(text_cur,0xc8); CK(text_stream,0xd0); CK(scroll_row,0xdc); CK(frame,0xe0);
 CK(tex,0xe8); CK(cur_tex,0x850e8);
 CK(elevation,0x850ec); CK(lighting,0x890ec); CK(texptr,0x8d0ec);
 CK(text_buf,0x910ec); CK(splat_target,0x910f4); CK(lut,0x910f8);
-CK(enemy,0x99454); CK(bullet,0x99574); CK(debris,0x99704);
+CK(enemy,0x99454); CK(enemy6_pose,0x9956c); CK(bullet,0x99570);
+CK(fire_slot,0x99700); CK(debris,0x99704);
 CK(debris_idx,0x9a6a4); CK(fx_names,0x9a6a8); CK(fx_fire,0x9a6b0);
 CK(daynight,0x9a6b4); CK(recover,0x9a6c0); CK(spawn_count,0x9a6c4);
 CK(lane_cur,0x9a6cc); CK(lane_tgt,0x9a6ec); CK(lane_pair,0x9a710);
