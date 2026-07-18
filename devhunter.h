@@ -164,27 +164,12 @@ extern DevHunter *g;
 extern unsigned char *g_fb;
 extern double g_rand_seed;
 
-/* ---------------------------------------------------------------------------
- * Legacy raw-buffer bridge.
- *
- * The port was first written against a flat byte buffer `S` with offset macros
- * (`i32(0x34)`, `f32(0xc0)`, ...).  `S` now simply aliases the class object
- * (`S == (unsigned char*)g`), so the two views are the same memory.  Named
- * fields (`g->surf`) are the readable form; these macros remain only for the
- * handful of deep texture-bank / computed-array accesses that don't correspond
- * to a single named field.
- * ------------------------------------------------------------------------- */
+/* Raw byte view of the same object.  `S == (unsigned char*)g`; used only for the
+ * few genuinely address-level operations that have no single named field: the
+ * init.cpp relocation scan, the colour-indexed enemy sprite banks, and the
+ * letter-atlas tile arithmetic.  Everything else goes through the class fields. */
 extern unsigned char *S;
-#define f32(o)  (*(float*)(S+(o)))
-#define i32(o)  (*(int*)(S+(o)))
-#define u32(o)  (*(unsigned int*)(S+(o)))
-#define u8(o)   (*(unsigned char*)(S+(o)))
-#define i8(o)   (*(signed char*)(S+(o)))
-#define i16(o)  (*(short*)(S+(o)))
-#define u16(o)  (*(unsigned short*)(S+(o)))
-#define pp(o)   (*(unsigned char**)(S+(o)))
-#define IA(b,i) (*(int*)(S+(b)+((i)<<2)))
-#define PA(b,i) (*(unsigned char**)(S+(b)+((i)<<2)))
+
 #define FTOL(x) ((int)(x))          /* sub_3c6db234: truncate toward 0 */
 
 /* ---- helpers (helpers.cpp) ---- */

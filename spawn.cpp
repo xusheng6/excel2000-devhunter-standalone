@@ -5,21 +5,16 @@
  * inside the road-scroll loop; `edi_10 = (-g->scroll_row) & 0x3f` is the current
  * road-ring row index and `eax_59 = g->barrier_phase` is the barrier countdown.
  *
- * spawn_pattern : hlil 1795-1970 (the `g->spawn_count s< 1 && g->text_toggle != 0`
- *                 guard body — the caller has already tested the guard and
- *                 done `g->spawn_count -= 1`).  Picks a fresh lane/enemy pattern.
- * barrier_row   : hlil 1972-2051 (the whole `else`/eax_59!=0 branch, including
- *                 the leading `g->barrier_phase = eax_59 - 1`).  Paints one
- *                 lane-transition / barrier row.
+ * spawn_pattern : hlil 1795-1970.  Picks a fresh lane/enemy pattern.
+ * barrier_row   : hlil 1972-2051.  Paints one lane-transition / barrier row.
  *
- * State layout (best inference):
- *   0x9a6cc[6]  current per-lane occupancy (bitmask of active sub-lanes)
- *   0x9a6ec[6]  target  per-lane occupancy for the pattern being spawned
- *   0x9a710/0x9a714  lane-target pairs, stride 8 bytes: [-1]=source lane,
- *                    [0]=dest lane (0x9a710 first, 0x9a714 second of each pair)
- *   0x9a744/0x9a748/0x9a758/0x9a75c/0x9a770  barrier grid cells (nibble flags)
- *   0x9946c+     enemy records (base 0x9945c, stride 0x28): [0]=lane idx,
- *                [1]=target-y (float), [2]=timer/health (float, >0 = alive)
+ * The lane state:
+ *   g->lane_cur[6]   current per-lane occupancy (0 = empty)
+ *   g->lane_tgt[6]   target  per-lane occupancy for the pattern being spawned
+ *   g->lane_pair[]   per-lane {source,dest} pairs, stride 2 ints
+ *   g->barrier_grid[] raw nibble grid describing each lane's merge/split; the
+ *                    cursor walks below index it with small +/- offsets (they
+ *                    mirror the DLL's flat-buffer pointer arithmetic exactly).
  */
 #include <string.h>
 #include "devhunter.h"
@@ -34,95 +29,67 @@ void spawn_pattern(int edi_10)
     int eax_131 = FTOL(dh_rand() * 6.0);
     g->spawn_pat = (unsigned char)eax_131;
 
-    /* target occupancy 0x9a6ec[0..5] from the chosen pattern-row bitmask */
-    {
-        int i_6 = 1;
-        int *edx_25 = (int *)(S + 0x9a6ec);
-        do {
-            int edi_17 = (1 << (i_6 & 0xff)) & (int)(signed char)u8(0x9a7ec + eax_131);
-            i_6 += 1;
-            *edx_25 = edi_17;
-            edx_25 = &edx_25[1];
-        } while (i_6 < 7);
-    }
+    /* target occupancy from the chosen pattern-row bitmask */
+    for (int k = 0; k < 6; k++)
+        g->lane_tgt[k] = (1 << ((k + 1) & 0xff)) & (int)(signed char)g->spawn_tab[eax_131];
 
-    /* build the lane-target pairs 0x9a714 and the max transition distance */
+    /* build the lane {source,dest} pairs and the max transition distance */
     int var_8_1 = 0;
-    {
-        int i_7 = 1;
-        int *ebx_16 = (int *)(S + 0x9a714);
-        int *var_2c_19 = (int *)(S + 0x9a6cc);
-        g->text_col = ((int)(signed char)u8(0x9a7f4 + eax_131) << 2) + 0x14;
-        do {
-            ebx_16[-1] = i_7;
-            ebx_16[0]  = i_7;
-            int eax_136 = *var_2c_19;
-            if (eax_136 != var_2c_19[8]) {
-                if (eax_136 == 0) {
-                    /* lane starts: snap dest to nearest currently-occupied lane */
-                    int var_20_2 = 0xa;
-                    int j_2 = 1;
-                    int *var_24_5 = (int *)(S + 0x9a6cc);
-                    do {
-                        if (*var_24_5 != 0) {
-                            int d = dh_iabs(j_2 - i_7);
-                            if (d < var_20_2) { var_20_2 = d; ebx_16[0] = j_2; }
-                        }
-                        var_24_5 = &var_24_5[1];
-                        j_2 += 1;
-                    } while (j_2 < 7);
-                    if (var_8_1 <= var_20_2) var_8_1 = var_20_2;
-                } else {
-                    /* lane ends: snap source to nearest target-occupied lane */
-                    int var_20_1 = 0xa;
-                    int j_3 = 1;
-                    int *var_24_4 = (int *)(S + 0x9a6ec);
-                    do {
-                        if (*var_24_4 != 0) {
-                            int d = dh_iabs(j_3 - i_7);
-                            if (d < var_20_1) { var_20_1 = d; ebx_16[-1] = j_3; }
-                        }
-                        var_24_4 = &var_24_4[1];
-                        j_3 += 1;
-                    } while (j_3 < 7);
-                    if (var_8_1 <= var_20_1) var_8_1 = var_20_1;
+    g->text_col = ((int)(signed char)g->spawn_tab[eax_131 + 8] << 2) + 0x14;
+    for (int k = 0; k < 6; k++) {
+        int   lane = k + 1;
+        int  *pair_src = &g->lane_pair[2*k];       /* ebx_16[-1] */
+        int  *pair_dst = &g->lane_pair[2*k + 1];   /* ebx_16[ 0] */
+        *pair_src = lane;
+        *pair_dst = lane;
+        int cur = g->lane_cur[k];
+        if (cur != g->lane_tgt[k]) {
+            if (cur == 0) {
+                /* lane starts: snap dest to nearest currently-occupied lane */
+                int best = 0xa;
+                for (int j = 1; j < 7; j++) {
+                    if (g->lane_cur[j-1] != 0) {
+                        int d = dh_iabs(j - lane);
+                        if (d < best) { best = d; *pair_dst = j; }
+                    }
                 }
+                if (var_8_1 <= best) var_8_1 = best;
+            } else {
+                /* lane ends: snap source to nearest target-occupied lane */
+                int best = 0xa;
+                for (int j = 1; j < 7; j++) {
+                    if (g->lane_tgt[j-1] != 0) {
+                        int d = dh_iabs(j - lane);
+                        if (d < best) { best = d; *pair_src = j; }
+                    }
+                }
+                if (var_8_1 <= best) var_8_1 = best;
             }
-            i_7 += 1;
-            var_2c_19 = &var_2c_19[1];
-            ebx_16 = &ebx_16[2];
-        } while (i_7 < 7);
+        }
     }
 
     /* re-home the 7 live enemies onto their remapped lane target-y */
-    {
-        int *ecx_30 = (int *)(S + 0x9946c);
-        int i_36 = 7;
-        int i_8;
-        do {
-            if (((float *)ecx_30)[2] > 0.0f) {
-                int eax_157 = *(int *)(S + ((*ecx_30) << 3) + 0x9a710) - 1;
-                *ecx_30 = eax_157;
-                ((float *)ecx_30)[1] = (float)((double)(eax_157 * 0x54) - 210.0);
-            }
-            ecx_30 = &ecx_30[0xa];
-            i_8 = i_36;
-            i_36 -= 1;
-        } while (i_8 != 1);
+    for (int k = 0; k < 7; k++) {
+        Enemy &en = g->enemy[k];
+        if (en.timer > 0.0f) {
+            int nl = g->lane_pair[en.lane * 2] - 1;
+            en.lane = nl;
+            en.target_y = (float)((double)(nl * 0x54) - 210.0);
+        }
     }
 
     /* schedule the barrier row and clear the barrier grid */
     g->barrier_phase = var_8_1 << 2;
-    memset(S + 0x9a748, 0, 0xa0);
+    memset(&g->barrier_grid[1], 0, 0xa0);
 
     /* fill the barrier grid describing how each lane merges/splits */
     {
         int edx_29 = 1;
-        int *var_c    = (int *)(S + 0x9a770);
-        int *var_20_3 = (int *)(S + 0x9a6cc);
+        int *var_c    = &g->barrier_grid[11];              /* 0x9a770 */
+        int *var_20_3 = &g->lane_cur[0];
         int i_9 = 5;
-        int *eax_161  = (int *)(S + 0x9a714);
-        int *var_28_5 = (int *)(S + (var_8_1 << 2) + 0x9a744);
+        int *eax_161  = &g->lane_pair[1];                  /* 0x9a714 */
+        int *var_28_5 = &g->barrier_grid[var_8_1];         /* 0x9a744 + dist */
         do {
             int ecx_34 = eax_161[-1];
             if (ecx_34 != edx_29 || eax_161[0] != edx_29) {
@@ -164,8 +131,8 @@ void spawn_pattern(int edi_10)
                         int ecx_40 = i_27 - j_4;
                         i_27 += 5;
                         int ecx_41 = ecx_40 + var_8_1;
-                        IA(0x9a744, ecx_41) |= 0xc;
-                        IA(0x9a758, ecx_41) |= 3;
+                        g->barrier_grid[ecx_41]     |= 0xc;
+                        g->barrier_grid[ecx_41 + 5] |= 3;
                         j_4 += 1;
                     } while (j_4 < eax_161[-1] - edx_29);
                 }
@@ -201,7 +168,7 @@ void barrier_row(int edi_10, int eax_59)
     /* build the 6 lane cell-texture columns for this barrier row */
     {
         int i_10 = 1;
-        int *ebx_5 = (int *)(S + (temp0_1 << 2) + 0x9a75c);
+        int *ebx_5 = &g->barrier_grid[6 + temp0_1];        /* 0x9a75c + phase/4 */
         do {
             int ecx_4 = *ebx_5;
             int eax_63 = 0;
@@ -216,11 +183,12 @@ void barrier_row(int edi_10, int eax_59)
                 else if (ecx_4 != 9) edi_11 = (ecx_4 != 0xc ? 1 : 0) + 4;
             }
             int j_6 = eax_63 * 6;
-            int *edx_10 = (int *)(S + ((eax_63 + (((edi_10 << 4) + i_10) << 2)) << 2) + 0x8d128);
+            /* write animated cell textures into the texptr grid (as ints) */
+            int *edx_10 = (int *)(g->texptr + 0xf + eax_63 + (((edi_10 << 4) + i_10) << 2));
             do {
                 int eax_67 = (g->barrier_phase & 3) + j_6;
                 j_6 += 6;
-                *edx_10 = IA(0x990f8, edi_11 + eax_67 * 6);
+                *edx_10 = g->colorscheme[edi_11 + eax_67 * 6];
                 edx_10 = &edx_10[1];
             } while (j_6 < 0x1e);
             i_10 += 1;
@@ -231,36 +199,27 @@ void barrier_row(int edi_10, int eax_59)
     /* paint the road cells: grass outside, barrier / gap inside the lane band */
     for (int i_11 = 0; i_11 < 0x40; i_11++) {
         if (i_11 < 0x13 || i_11 > 0x2b) {
-            PA(0x8d0ec, (edi_10 << 6) + i_11) = S + 0x20e8;
+            g->texptr[(edi_10 << 6) + i_11] = g->proto(TEX_GRASS);
         } else if (((i_11 + 1) & 3) == 0) {
             int eax_73 = ((i_11 - 0x13) >> 2) * 5 + temp0_1;
-            int ecx_8  = IA(0x9a748, eax_73);
-            int eax_74 = IA(0x9a75c, eax_73);
+            int ecx_8  = g->barrier_grid[eax_73 + 1];      /* 0x9a748 + eax_73 */
+            int eax_74 = g->barrier_grid[eax_73 + 6];      /* 0x9a75c + eax_73 */
             if ((ecx_8 == 0xf || ecx_8 == 0) && (eax_74 == 0xf || eax_74 == 0)) {
                 if (ecx_8 != 0 || eax_74 != 0) {
                     int edx_11 = (eax_74 == 0xf) ? 1 : 0;
                     int eax_75 = (ecx_8 == 0xf) ? 1 : 0;
                     unsigned char *eax_79;
-                    if (edx_11 != eax_75 || (g->frame % 6) < 3) eax_79 = S + 0x10e8;
-                    else                                         eax_79 = S + 0xe8;
-                    PA(0x8d0ec, (edi_10 << 6) + i_11) = eax_79;
+                    if (edx_11 != eax_75 || (g->frame % 6) < 3) eax_79 = g->proto(TEX_LANE);
+                    else                                        eax_79 = g->proto(TEX_PLAIN);
+                    g->texptr[(edi_10 << 6) + i_11] = eax_79;
                 } else {
-                    PA(0x8d0ec, (edi_10 << 6) + i_11) = S + 0x20e8;
+                    g->texptr[(edi_10 << 6) + i_11] = g->proto(TEX_GRASS);
                 }
             }
         }
     }
 
-    /* commit the transition: current occupancy 0x9a6cc <- target 0x9a6ec */
-    {
-        int *eax_80 = (int *)(S + 0x9a6cc);
-        int i_34 = 6;
-        int i_12;
-        do {
-            *eax_80 = eax_80[8];
-            eax_80 = &eax_80[1];
-            i_12 = i_34;
-            i_34 -= 1;
-        } while (i_12 != 1);
-    }
+    /* commit the transition: current occupancy <- target occupancy */
+    for (int k = 0; k < 6; k++)
+        g->lane_cur[k] = g->lane_tgt[k];
 }
