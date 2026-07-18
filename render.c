@@ -23,8 +23,8 @@ void game_render(int shade){
     static int V[0x41*0x41 + 4];        /* projected X grid (var_4360) */
     static int SY[0x41 + 2];            /* per-row screen Y (var_158..) */
     double camX = f32(0x9c), camY = f32(0xa0);
-    double var54 = (-640.0 - camX) * 48.0;
-    double r7_2  = 48.0;
+    double leftBase  = (-640.0 - camX) * 48.0;   /* left road edge  */
+    double rightBase = ( 640.0 - camX) * 48.0;   /* right road edge */
     int var8 = i32(0xdc);
     int row, col, i_1, edi;
 
@@ -35,9 +35,8 @@ void game_render(int shade){
         int screenY  = FTOL((dist*SIN10 + K1969)*FOCAL / denom);
         int eax12, eax13, var10, ecx;
         SY[row] = screenY - 0xce;
-        eax12 = FTOL(var54 / denom);
-        eax13 = FTOL(r7_2 / denom);
-        r7_2  = denom;
+        eax12 = FTOL(leftBase  / denom);
+        eax13 = FTOL(rightBase / denom);
         var10 = 0; ecx = eax13 - eax12;
         for(col=0; col<0x40; col++){
             int sx = var10/0x3f + eax12 + 0x140;

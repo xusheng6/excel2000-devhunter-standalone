@@ -1,0 +1,2 @@
+this=5e0000 shade=0 pitch=640 surf=d320428
+camX(9c)=0.0 camY(a0)=0.40000152587890625 dc(dc)=48 e0=48
