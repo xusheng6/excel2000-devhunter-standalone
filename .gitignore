@@ -9,3 +9,9 @@
 approx/*.exe
 approx/*.obj
 approx/data.h
+
+# debugger state dumps
+verify/*.bin
+verify/*.raw
+tbuild.bat
+test_render.exe
