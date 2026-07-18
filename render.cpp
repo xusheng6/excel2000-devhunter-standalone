@@ -2,13 +2,13 @@
  * Projects a straight flat 0x41x0x41 road mesh (camera pitch 10deg, focal 864,
  * centre (0x140,0xce)) and fills each cell as a shaded/textured trapezoid via
  * raster_span; then cars / bullets / debris.  DirectDraw lock/flip is replaced
- * by writing straight into g_fb (surface base pp(0x34), pitch i32(0x20)).
+ * by writing straight into g_fb (surface base g->surf, pitch g->surf_pitch).
  *
  * this = S ; arg1 = `shade` (the ambient `var_14` computed in tick).
  */
 #include <string.h>
 #include <math.h>
-#include "dh.h"
+#include "devhunter.h"
 
 /* projection constants (qwords at 0x3c7ad2xx) */
 #define COS10  0.98480775301220802
@@ -18,14 +18,14 @@
 #define FOCAL  864.0
 
 void game_render(int shade){
-    unsigned char *fb = pp(0x34);       /* g_fb */
-    int pitch = i32(0x20);
+    unsigned char *fb = g->surf;       /* g_fb */
+    int pitch = g->surf_pitch;
     static int V[0x41*0x41 + 4];        /* projected X grid (var_4360) */
     static int SY[0x41 + 2];            /* per-row screen Y (var_158..) */
-    double camX = f32(0x9c), camY = f32(0xa0);
+    double camX = g->camX, camY = g->camY;
     double leftBase  = (-640.0 - camX) * 48.0;   /* left road edge  */
     double rightBase = ( 640.0 - camX) * 48.0;   /* right road edge */
-    int var8 = i32(0xdc);
+    int var8 = g->scroll_row;
     int row, col, i_1, edi;
 
     /* ---- projection: 0x41 rows ---- */
@@ -49,7 +49,7 @@ void game_render(int shade){
     }
 
     /* ---- road mesh raster ---- */
-    { int dc = i32(0xdc);
+    { int dc = g->scroll_row;
       for(i_1 = -dc; i_1 < 0x31 - dc; i_1++){
         int ebx = i_1 & 0x3f;
         int base = 1 + ebx*0x41;
@@ -59,13 +59,13 @@ void game_render(int shade){
             if(left < right && left <= 0x27f && right > 0){
                 int r0 = ebx*0x40 + edi;
                 int r1 = ((ebx+1)&0x3f)*0x40 + edi;
-                pp(0x850e8) = PA(0x8d0ec, r0);      /* cell texture */
+                g->cur_tex = g->texptr[r0];        /* cell texture */
                 raster_span(fb, pitch,
                     SY[ebx], SY[ebx+1],             /* y top / bottom */
                     V[M], V[M+1],                    /* x top-left / top-right */
                     V[M+0x41], V[M+0x42],            /* x bottom-left / bottom-right */
-                    IA(0x890ec, r0), IA(0x890ec, r0+1),   /* shade top l/r */
-                    IA(0x890ec, r1), IA(0x890ec, r1+1));  /* shade bottom l/r */
+                    g->lighting[r0], g->lighting[r0+1],   /* shade top l/r */
+                    g->lighting[r1], g->lighting[r1+1]);  /* shade bottom l/r */
             }
         }
       }

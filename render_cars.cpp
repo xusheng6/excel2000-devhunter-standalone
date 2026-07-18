@@ -15,7 +15,7 @@
  * which is what the road part already assumes since it ignores `shade`).
  */
 #include <math.h>
-#include "dh.h"
+#include "devhunter.h"
 #include "data.h"          /* g_tab + TAB(absoluteAddr) : car vertex & mesh tables */
 
 /* ---- projection constants (qwords in the DLL) ---- */
@@ -45,10 +45,10 @@
 
 int g_render_shade = 0;    /* game_render arg1 (ambient car-shade base) */
 
-void render_cars(unsigned char *fb, int pitch)   /* fb = pp(0x34), pitch = i32(0x20) */
+void render_cars(unsigned char *fb, int pitch)   /* fb = g->surf, pitch = g->surf_pitch */
 {
-    double camX = f32(0x9c), camY = f32(0xa0);
-    int    e0    = i32(0xe0);
+    double camX = g->camX, camY = g->camY;
+    int    e0    = g->frame;
     int    shade = g_render_shade;                 /* arg1 */
     int    edi_2;
 
@@ -64,34 +64,34 @@ void render_cars(unsigned char *fb, int pitch)   /* fb = pp(0x34), pitch = i32(0
 
         if (edi_2 >= 7) {
             /* ---- player (asm 3c7df1f0) ---- */
-            CARX     = f32(0xc0);                   /* fld [esi+0xc0] -> CARX slot */
-            body     = S + 0x70e8;
-            window   = S + 0xe0e8;
-            roof     = S + 0x150e8;
+            CARX     = g->speed;                   /* fld [esi+0xc0] -> CARX slot */
+            body     = g->proto(0x70e8);
+            window   = g->proto(0xe0e8);
+            roof     = g->proto(0x150e8);
             CARbaseY = (double)e0 + camY - PLAYEROFF;
             dist14   = (double)e0 + camY - CARbaseY;    /* == 28.0 */
             /* player recovery flash uses field 0x9a6c0, flash when != 0 */
-            if (f32(0x9a6c0) != 0.0f)
-                var_1c_3 = ((0x1e - FTOL((double)f32(0x9a6c0))) << 8) + shade;
+            if (g->recover != 0.0f)
+                var_1c_3 = ((0x1e - FTOL((double)g->recover)) << 8) + shade;
             pose = 0;
         } else {
             /* ---- enemy (asm 3c7deb94) ---- */
-            int cbase = 0x9945c + edi_2 * 0x28;
+            Enemy &en = g->enemy[edi_2];
             unsigned char *bank;
-            CARX     = f32(cbase + 4);              /* 0x99460 */
-            CARbaseY = f32(cbase + 8);              /* 0x99464 */
-            /* skip inactive car: field 0x99474 <= 0 (fcomp;jbe) */
-            if (!(f32(cbase + 0x18) > 0.0f))
+            CARX     = en.y;                        /* lateral screen coord */
+            CARbaseY = en.x;                        /* forward  screen coord */
+            /* skip inactive car (fcomp;jbe) */
+            if (!(en.timer > 0.0f))
                 continue;
-            bank     = S + (i32(cbase + 0x1c) << 0xc);   /* (color<<12)+S, 0x99478 */
+            bank     = S + (en.color << 0xc);        /* colour-indexed sprite bank */
             body     = bank + 0x70e8;
             window   = bank + 0xe0e8;
             roof     = bank + 0x150e8;
             dist14   = (double)e0 + camY - CARbaseY;
-            /* enemy recovery flash: field 0x99474 < 20 */
-            if (f32(cbase + 0x18) < RECTHRESH)
-                var_1c_3 = ((0x1e - FTOL((double)f32(cbase + 0x18))) << 8) + shade;
-            pose = i32(cbase + 0x20);               /* 0x9947c */
+            /* enemy recovery flash while timer < 20 */
+            if (en.timer < RECTHRESH)
+                var_1c_3 = ((0x1e - FTOL((double)en.timer)) << 8) + shade;
+            pose = g->poseOf(edi_2);
         }
 
         /* ---- project the 16 model vertices (asm 3c7dec87..3c7ded51) ---- */
@@ -119,9 +119,9 @@ void render_cars(unsigned char *fb, int pitch)   /* fb = pp(0x34), pitch = i32(0
             int texsel = SB(i_3 + 4);
             int s0, s1, s2, s3;
 
-            if      (texsel == 0) pp(0x850e8) = body;
-            else if (texsel == 1) pp(0x850e8) = window;
-            else if (texsel == 2) pp(0x850e8) = roof;
+            if      (texsel == 0) g->cur_tex = body;
+            else if (texsel == 1) g->cur_tex = window;
+            else if (texsel == 2) g->cur_tex = roof;
 
             if (V[v0][1] == V[v1][1])               /* Yscr(v0)==Yscr(v1): degenerate */
                 continue;
@@ -144,56 +144,56 @@ void render_cars(unsigned char *fb, int pitch)   /* fb = pp(0x34), pitch = i32(0
             int texsel2 = SB(i_3 + 6);
             int cross, sh0, sh1, sh2;
 
-            if      (texsel2 == 0) pp(0x850e8) = body;
-            else if (texsel2 == 1) pp(0x850e8) = S + 0x1c0e8;
+            if      (texsel2 == 0) g->cur_tex = body;
+            else if (texsel2 == 1) g->cur_tex = g->proto(0x1c0e8);
 
             if ((edi_2 == 7 || pose == 3) && i_3 < MESH2_BODY)
-                pp(0x850e8) = body;
+                g->cur_tex = body;
 
             /* triangle A: left side (Xleft, Yscr) */
-            i32(0x9a948) = V[v0][0]; i32(0x9a94c) = V[v0][1];
-            i32(0x9a950) = V[v1][0]; i32(0x9a954) = V[v1][1];
-            i32(0x9a958) = V[v2][0]; i32(0x9a95c) = V[v2][1];
-            cross = (i32(0x9a95c) - i32(0x9a954)) * (i32(0x9a948) - i32(0x9a950))
-                  - (i32(0x9a958) - i32(0x9a950)) * (i32(0x9a94c) - i32(0x9a954));
+            g->tri[0] = V[v0][0]; g->tri[1] = V[v0][1];
+            g->tri[2] = V[v1][0]; g->tri[3] = V[v1][1];
+            g->tri[4] = V[v2][0]; g->tri[5] = V[v2][1];
+            cross = (g->tri[5] - g->tri[3]) * (g->tri[0] - g->tri[2])
+                  - (g->tri[4] - g->tri[2]) * (g->tri[1] - g->tri[3]);
             if (cross <= 0) {                       /* test edx; jg skip -> fill if <=0 */
                 sh0 = (SB(i_3 + 0) << 8) + var_1c_3; if (sh0 > 0x1e80) sh0 = 0x1e80;
                 sh1 = (SB(i_3 + 1) << 8) + var_1c_3; if (sh1 > 0x1e80) sh1 = 0x1e80;
                 sh2 = (SB(i_3 + 2) << 8) + var_1c_3; if (sh2 > 0x1e80) sh2 = 0x1e80;
-                i32(0x9a960) = sh0; i32(0x9a964) = sh1; i32(0x9a968) = sh2;
+                g->tri[6] = sh0; g->tri[7] = sh1; g->tri[8] = sh2;
                 raster_tri(fb, pitch);
             }
 
             /* triangle B: right side (Xright, Yscr copy) */
-            i32(0x9a948) = V[v0][2]; i32(0x9a94c) = V[v0][3];
-            i32(0x9a950) = V[v1][2]; i32(0x9a954) = V[v1][3];
-            i32(0x9a958) = V[v2][2]; i32(0x9a95c) = V[v2][3];
-            cross = (i32(0x9a95c) - i32(0x9a954)) * (i32(0x9a948) - i32(0x9a950))
-                  - (i32(0x9a958) - i32(0x9a950)) * (i32(0x9a94c) - i32(0x9a954));
+            g->tri[0] = V[v0][2]; g->tri[1] = V[v0][3];
+            g->tri[2] = V[v1][2]; g->tri[3] = V[v1][3];
+            g->tri[4] = V[v2][2]; g->tri[5] = V[v2][3];
+            cross = (g->tri[5] - g->tri[3]) * (g->tri[0] - g->tri[2])
+                  - (g->tri[4] - g->tri[2]) * (g->tri[1] - g->tri[3]);
             if (cross >= 0) {                       /* js skip -> fill if >=0 */
                 sh0 = (SB(i_3 + 3) << 8) + var_1c_3; if (sh0 > 0x1e80) sh0 = 0x1e80;
                 sh1 = (SB(i_3 + 4) << 8) + var_1c_3; if (sh1 > 0x1e80) sh1 = 0x1e80;
                 sh2 = (SB(i_3 + 5) << 8) + var_1c_3; if (sh2 > 0x1e80) sh2 = 0x1e80;
-                i32(0x9a960) = sh0; i32(0x9a964) = sh1; i32(0x9a968) = sh2;
+                g->tri[6] = sh0; g->tri[7] = sh1; g->tri[8] = sh2;
                 raster_tri(fb, pitch);
             }
         }
     }
 
-    /* ================= bullets: array 0x9957c, 0x14 entries, stride 0x14 ========= */
+    /* ================= bullets: g->bullet[0..19] ================================ */
     {
-        unsigned int b;
         int k;
-        for (k = 0, b = 0x9957c; k < 0x14; k++, b += 0x14) {
+        for (k = 0; k < 0x14; k++) {
+            Bullet &bl = g->bullet[k];
             double zc, denom;
             int Yscr, Xscr;
-            if (!(f32(b + 4) > 0.0f))               /* alive test (fcomp;jbe) */
+            if (!(bl.life > 0.0f))                  /* alive test (fcomp;jbe) */
                 continue;
-            zc    = (double)e0 - (double)f32(b) + camY;          /* e0 - Y + camY */
+            zc    = (double)e0 - (double)bl.y + camY;
             denom = C86 - (zc * COS10 + K3473);
             Yscr  = FTOL((zc * SIN10 + K1969) * FOCAL / denom) - 0xce;
-            Xscr  = 0x140 - FTOL(((double)f32(b - 4) - camX) * XFOCAL / denom);
-            i32(0x9a80c) = Yscr;                    /* stored unconditionally */
+            Xscr  = 0x140 - FTOL(((double)bl.x - camX) * XFOCAL / denom);
+            g->f_9a80c = Yscr;                    /* stored unconditionally */
             if (Yscr > -1 && Yscr < 0x1e0) {        /* note: no X bound check for bullets */
                 unsigned char *p = fb + pitch * Yscr + Xscr;
                 p[0] = 0x88;
@@ -202,21 +202,21 @@ void render_cars(unsigned char *fb, int pitch)   /* fb = pp(0x34), pitch = i32(0
         }
     }
 
-    /* ================= debris: array 0x99714, 0xc8 entries, stride 0x14 ========== */
+    /* ================= debris: g->debris[0..199] ================================ */
     {
-        unsigned int d;
         int k;
-        for (k = 0, d = 0x99714; k < 0xc8; k++, d += 0x14) {
+        for (k = 0; k < 0xc8; k++) {
+            Debris &db = g->debris[k];
             double zc, denom;
             int Yscr, Xscr;
-            if (!(f32(d) > 0.0f))                   /* alive test */
+            if (!(db.life > 0.0f))                  /* alive test */
                 continue;
-            zc    = (double)e0 - (double)f32(d - 4) + camY;
+            zc    = (double)e0 - (double)db.y + camY;
             denom = C86 - (zc * COS10 + K3473);
             Yscr  = FTOL((zc * SIN10 + K1969) * FOCAL / denom) - 0xce;
-            Xscr  = 0x140 - FTOL(((double)f32(d - 8) - camX) * XFOCAL / denom);
+            Xscr  = 0x140 - FTOL(((double)db.x - camX) * XFOCAL / denom);
             if (Xscr > 0 && Xscr < 0x27f && Yscr > -1 && Yscr < 0x1de) {
-                int cval = FTOL((double)f32(d) * DBGCOL);        /* fld [edi]*-0.75 */
+                int cval = FTOL((double)db.life * DBGCOL);        /* fld [edi]*-0.75 */
                 int cl   = (0x80 - cval) & 0xff;                 /* cl */
                 int ch   = (((0x80 - cval) >> 8) & 0xff) | 0x88; /* or ch,0x88 */
                 unsigned char *p = fb + pitch * Yscr + Xscr;
