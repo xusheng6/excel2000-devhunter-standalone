@@ -40,7 +40,8 @@ the Binary Ninja debugger for byte‑for‑byte verification.
 - **Loader:** [jeffli678/excel2000-devhunter-loader](https://github.com/jeffli678/excel2000-devhunter-loader)
 - **Video:** [Reviving an Excel 2000 easter egg](https://www.youtube.com/watch?v=B2jlbsmL2fQ)
 - **Article:** Li, Xusheng. "Reviving an Excel 2000 Easter Egg." *Paged Out!* No. 6,
-  March 29, 2025 — [PagedOut_006.pdf](https://pagedout.institute/download/PagedOut_006.pdf)
+  p. 64, March 29, 2025 — [the page (PDF)](docs/pagedout6-devhunter.pdf) ·
+  [full issue](https://pagedout.institute/download/PagedOut_006.pdf)
 
 ## Build
 
@@ -189,5 +190,5 @@ Microsoft — Excel 2000 / MSOWC / the original Dev Hunter and its developers
 Reverse engineering, loader, and port by Xusheng Li — see the
 [loader](https://github.com/jeffli678/excel2000-devhunter-loader),
 [video](https://www.youtube.com/watch?v=B2jlbsmL2fQ), and the *Paged Out!* No. 6
-article (["Reviving an Excel 2000 Easter Egg"](https://pagedout.institute/download/PagedOut_006.pdf),
+article (["Reviving an Excel 2000 Easter Egg"](docs/pagedout6-devhunter.pdf), p. 64,
 March 29, 2025) in **Background** above.
