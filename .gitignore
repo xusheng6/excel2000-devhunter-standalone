@@ -9,4 +9,5 @@ devhunter.exe
 *.ppm
 *.png
 !screenshot.png
+!article/*.png
 gifframes/
