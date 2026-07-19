@@ -30,6 +30,18 @@ a deterministic `--shot` clock.
 from a snapshot of its exact output (`init_state.bin`) rather than re‑derived —
 byte‑identical and still standalone.
 
+## Background
+
+This standalone port follows on from earlier work on getting the easter egg to
+run at all — a loader that side‑loads `MSOWC.DLL` and drives the hidden Dev Hunter
+game outside Excel. That loader is what let this port run the real game live under
+the Binary Ninja debugger for byte‑for‑byte verification.
+
+- **Loader:** [jeffli678/excel2000-devhunter-loader](https://github.com/jeffli678/excel2000-devhunter-loader)
+- **Video:** [Reviving an Excel 2000 easter egg](https://www.youtube.com/watch?v=B2jlbsmL2fQ)
+- **Article:** Li, Xusheng. "Reviving an Excel 2000 Easter Egg." *Paged Out!* No. 6,
+  March 29, 2025 — [PagedOut_006.pdf](https://pagedout.institute/download/PagedOut_006.pdf)
+
 ## Build
 
 Needs MSVC (any recent Visual Studio). Builds **32‑bit** (the game stores 4‑byte
@@ -102,3 +114,9 @@ deterministic setup is loaded from a captured snapshot (`init_state.bin`).
 
 Microsoft — Excel 2000 / MSOWC / the original Dev Hunter and its developers
 (whose names you are hunting). This reimplementation is a fan/RE project.
+
+Reverse engineering, loader, and port by Xusheng Li — see the
+[loader](https://github.com/jeffli678/excel2000-devhunter-loader),
+[video](https://www.youtube.com/watch?v=B2jlbsmL2fQ), and the *Paged Out!* No. 6
+article (["Reviving an Excel 2000 Easter Egg"](https://pagedout.institute/download/PagedOut_006.pdf),
+March 29, 2025) in **Background** above.
