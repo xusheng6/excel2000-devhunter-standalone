@@ -10,10 +10,11 @@ All addresses use the Binary Ninja image base **`0x3c6d0000`**.
 map 1:1 onto the named member fields of the `DevHunter` class in `devhunter.h`
 (e.g. `+0xa0` → `g->camY`), each pinned to its offset by a `static_assert`.
 
-Reference dumps live in `re/`:
-* `re/hlil.txt`  — HLIL of ~76 game functions (roots + call graph, depth 4)
-* `re/asm.txt`   — x86 disassembly + stack layouts of the three big functions
-* `re/extra_funcs.txt` — input wndproc, palette/display setup, ddraw helpers
+The raw reference dumps this teardown was built from — the HLIL of ~76 game
+functions, the x86 disassembly + stack layouts of the three big functions, and
+the input‑wndproc / palette / ddraw helpers — are not kept in the working tree;
+they remain in the git history (the old `re/` directory) if ever needed. The
+`.cpp` files still cite the relevant HLIL/asm line ranges inline.
 
 ## 1. Entry points / control flow
 
@@ -197,7 +198,7 @@ glow are all translated from the disassembly and verified **byte‑identical**
 against the real game (run live under the Binary Ninja debugger, and via
 deterministic `--shot` SHA256 diffs across a full day/night cycle).
 
-The three heavy functions were translated from `re/asm.txt` (not HLIL):
+The three heavy functions were translated from the raw x86 disassembly (not HLIL):
 1. `game_init` terrain generator — noise array `var_88c` at **`ebp‑0x88c`**
    (32×32 `int16`), filled `0x15 - (int)(rand()*-8)`, box‑smoothed
    (`(L+R+6*C+up+down)*10/100`) into the elevation grid, plus lane colouring and
@@ -214,9 +215,6 @@ The three heavy functions were translated from `re/asm.txt` (not HLIL):
 The game's `this` object is modelled as the `DevHunter` class (`devhunter.h`)
 with named fields at their exact offsets, so the code reads `g->speed` /
 `g->enemy[i].timer` / `g->texptr[cell]` rather than raw `*(this+0xNN)`.
-
-An earlier "close‑enough" reconstruction (tuned against the gameplay recordings
-rather than translated) is preserved under `approx/`.
 
 ## Build & run
 ```

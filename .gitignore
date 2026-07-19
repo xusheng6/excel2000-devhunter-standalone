@@ -1,17 +1,11 @@
-# build artifacts
+# build artifacts (devhunter.exe is a build output — run build.bat to regenerate)
 *.exe
+devhunter.exe
 *.obj
 *.pdb
 *.ilk
-# captured frames / scratch images
+
+# captured frames / scratch images (keep the README screenshot)
 *.ppm
 *.png
-approx/*.exe
-approx/*.obj
-approx/data.h
-
-# debugger state dumps
-verify/*.bin
-verify/*.raw
-tbuild.bat
-test_render.exe
+!screenshot.png

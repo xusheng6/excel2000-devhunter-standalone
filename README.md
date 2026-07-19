@@ -14,8 +14,7 @@ from `MSOWC.DLL` and verified pixel‑for‑pixel against the real game (run liv
 under the Binary Ninja debugger). The perspective road renderer, the software
 rasterizer, the player physics, the road/lane/barrier generation, the scrolling
 dev‑name text, the car sprites, enemies and bullets are all translated from the
-disassembly. See `REVERSE_ENGINEERING.md` for the teardown and `re/` for the raw
-HLIL/asm.
+disassembly. See `REVERSE_ENGINEERING.md` for the teardown.
 
 The original is C++ (an ActiveX/COM control; the game logic is methods on one
 large `this` object), so the port is **C++** too: `devhunter.h` declares that
@@ -88,8 +87,7 @@ devhunter.exe --shot 120 out.ppm
 | `helpers.cpp` | RNG, the two gouraud/textured rasterizers, particle spawn/splat |
 | `data.h` | generated: exact palette, decrypted text, data tables (from `MSOWC.DLL`) |
 | `init_state.bin` | captured deterministic output of the DLL's init |
-| `REVERSE_ENGINEERING.md`, `re/` | full RE notes and raw HLIL/asm dumps |
-| `approx/` | an earlier "close‑enough" reconstruction (self‑contained, no `init_state.bin`) |
+| `REVERSE_ENGINEERING.md` | full RE teardown notes |
 
 ## Status
 
