@@ -7,7 +7,7 @@ and shoot the oncoming "developer" cars.
 
 No Excel, no DirectDraw, no DLL required to run.
 
-![screenshot](screenshot.png)
+![Dev Hunter gameplay](gameplay.gif)
 
 This is a **faithful translation of the original game code**, reverse‑engineered
 from `MSOWC.DLL` and verified pixel‑for‑pixel against the real game (run live
@@ -75,6 +75,74 @@ Shoot the oncoming developer cars. As in the original there is **no car‑to‑c
 collision** — you hunt them by shooting; the only way to crash is driving into a
 **lane‑end barrier**, which spins you out.
 
+## The text on the road
+
+Every bit of on-road text — the mission briefing, the parody movie-style
+developer credit roll, and the taunts — is decrypted from `MSOWC.DLL` (see
+`data.h`) and painted onto the tarmac one line at a time as the road scrolls.
+
+### Mission briefing
+
+![the mission briefing scrolling up the road](screenshot.png)
+
+> You are Dev Hunter. Your mission is to hunt software developers on the
+> highways of Seattle, and destroy them. The most notorious are those
+> suspected of creating the infamous Microsoft Office Web Components. It is
+> these wretched scum that you now seek.
+
+### Taunts
+
+As you drive, taunts scroll past:
+
+- “Super funk data”
+- “We are special too”
+- “You will respect the rectangles”
+- “Don't skimp on the data”
+- “What do these people do again?”
+- “So your name is misspelled — what are you going to do about it?”
+- “Also, also… wik”
+- “Circles are good too, but they're not rectangles”
+- “Pivot! Pivot! Pivot! Can't get enough”
+- “Malicious pixies”
+- “A chart says so much even though it doesn't really say anything, because it can't talk”
+- “Thanks for sharing”
+- “Last but not least, and also not compressed… ham”
+
+### Credits
+
+The scroll finishes with a full, movie-style developer credit roll:
+
+<details>
+<summary>Dev Hunter credit roll</summary>
+
+**Developers**
+
+- *Charting* — Jason Allen, Jeff Couckuyt, Randy Davis, Matt Reynolds
+- *Spreadsheet* — Matthew Androski, Wes Cherry, Jeff Cooperstein, Brent Curtis, Amit Dekate, Eric Matteson, Andrew Milton
+- *Pivot Table* — Mike Coulson, Kevin Grealish, David Wortendyke
+- *Data Access* — Matthew Bellew, Chris Brown, Anatoly Grabar, Heath Hunnicutt, Andrew Miller, Will Pugh, Mike Uhlar
+
+**Testers**
+
+- *Charting* — Aaron Bregel, Ozgur Basaran, Joella Berry, Hien Bui, Chad Foley, Robert McCaughey, Thao Moua, Hung Chun Yu
+- *Spreadsheet* — James Ellis, George Hammel, Chris Haymond, Jeremy Pankratz, Ryan Simpson
+- *Pivot Table* — Michalakis Michael, Dan Ricker, Debra Tan, Andy Tischaefer
+- *Data Access* — Daniel Brown, Phillip Hutchinson, Michael Jaber, Howard Lo
+
+**Managers**
+
+- *Program* — Jason Cahill, Peter Hussey, Mark Igra, Kent Lowry, Jay Massena, George Snelling, Dave Stearns, Less Wright
+
+**Appearances**
+
+- *Guest* — Valentina Bayer, Matt Bamberger, Genevieve Barnes, Arjun Chopra, Jon Hildebrandt, Darren Key, Lelah Manz, Razvan Surdulescu, Jeff Taveroff
+
+**Stunts**
+
+- *Additional* — Krista Anderson, Michael Gardner, Andrew Gillaspie, Hollace Kennedy, Byron Krystad, Alfred Hellstern, Justin McGuire III, Loreen La Penna, Ann Laporte, Roy Leban, Andy Lee, Richard McAniff, Dyane Nguyen, Marcella Rader, Greta Stone, Wade Tai, Carl Tostevin
+
+</details>
+
 ## Headless screenshot
 
 Runs N frames (simulating the accelerator) and dumps a PPM — handy for
@@ -83,6 +151,9 @@ regression/visual checks:
 ```
 devhunter.exe --shot 120 out.ppm
 ```
+
+`--frames N dir` dumps one PPM per frame into `dir/` (accelerating and
+auto-firing) — a deterministic capture used to build the gameplay gif above.
 
 ## Files
 

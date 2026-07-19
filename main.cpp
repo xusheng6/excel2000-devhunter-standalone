@@ -118,6 +118,21 @@ int WINAPI WinMain(HINSTANCE hi,HINSTANCE hp,LPSTR cmd,int show){
     MSG msg;
     (void)hi;(void)hp;(void)show;
 
+    /* --frames N dir : deterministic gameplay capture (accelerates + auto-fires),
+     * dumping one PPM per frame to dir/fNNNN.ppm — used to build the README gif. */
+    if(cmd && strstr(cmd,"--frames")){
+        int frames=180,i; char dir[240]="gifframes";
+        sscanf(cmd,"%*s %d %239s",&frames,dir);
+        make_window(); timeBeginPeriod(1); boot();
+        g_fake_clock=1; g_fake_time=0; g->frame_timer=0;
+        g->key_up=1; g->fx_fire=1;   /* accelerate + fire */
+        for(i=0;i<frames;i++){
+            char p[300]; g_fake_time+=20; game_tick();
+            sprintf(p,"%s/f%04d.ppm",dir,i); dump_ppm(p);
+        }
+        return 0;
+    }
+
     if(cmd && strstr(cmd,"--shot")){
         int frames=1,i; char outp[260]="shot.ppm";
         sscanf(cmd,"%*s %d %259s",&frames,outp);
